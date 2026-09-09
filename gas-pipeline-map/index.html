@@ -177,6 +177,8 @@
     { name: 'Benuang SKG 18',    lat: -3.375057936390541, lng: 104.03782907862875 },
     { name: 'SKG 10',            lat: -3.434208709149742, lng: 104.21775166872 },
     { name: 'Extraction Plant',  lat: -3.432045373646473, lng: 104.21977405426833 },
+    { name: 'SKG-1 Limau Timur', lat: -3.4960773552609816, lng: 104.17816050420785 },
+    { name: 'PHE Ogan Komering', lat: -3.814665796151553, lng: 104.34473012507429 },
     { name: 'Fractionation Plant', lat: -2.9929461073930828, lng: 104.85092465739524 }
   ];
 
@@ -190,7 +192,6 @@
     { from: 'Benuang SKG 18', to: 'SKG 10', diameter: '20"' },
     { from: 'Rambutan Medco', to: 'Betung', diameter: '20"' },
     { from: 'Musi Timur', to: 'Teras Medco', diameter: '20"' },
-    { from: 'Teras Medco', to: 'Rambutan Medco', diameter: '20"' },
     { from: 'Teras Medco', to: 'Rambutan Medco', diameter: '16"' },
     { from: 'Musi Timur', to: 'Rambutan Medco', diameter: '16"' },
     { from: 'Rambutan Medco', to: 'Betung', diameter: '16"' },
@@ -204,7 +205,10 @@
     { from: 'Benuang SKG 18', to: 'SKG 10', diameter: '28"', color: '#3b82f6' },
     { from: 'SKG 10', to: 'Extraction Plant', diameter: '20"' },
     { from: 'SKG 10', to: 'Extraction Plant', diameter: '28"', color: '#3b82f6' },
-    { from: 'Extraction Plant', to: 'Fractionation Plant', diameter: '8"' }
+    { from: 'Extraction Plant', to: 'Fractionation Plant', diameter: '8"' },
+    // PHE Ogan Komering 자체 8인치, SKG-1 Limau Timur 자체 10인치 연결은 아직 보류 (엔드포인트 미정)
+    { from: 'SKG 10', to: 'SKG-1 Limau Timur', diameter: '28"', color: '#3b82f6' },
+    { from: 'SKG-1 Limau Timur', to: 'PHE Ogan Komering', diameter: '28"', color: '#3b82f6' }
   ];
 
   function findStation(name) {
