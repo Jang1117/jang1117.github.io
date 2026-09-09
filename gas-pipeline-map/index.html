@@ -248,7 +248,7 @@
       <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span>20" 그룹</div>
       <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>28" 라인</div>
       <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>NLG 라인</div>
-      <div class="legend-item"><span class="legend-dot" style="background:#a855f7"></span>둘 다 지나감</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#a855f7"></span>20", 28" 라인 둘다 지나감</div>
     </div>
     <div id="stationList"></div>
     <div id="summary"></div>
@@ -296,7 +296,7 @@
     { from: 'SKG 10', to: 'Extraction Plant', diameter: '28"', color: '#3b82f6' },
     { from: 'Extraction Plant', to: 'Fractionation Plant', diameter: '8"', color: '#22c55e', group: 'nlg' }, // NLG 라인 - 별도 그룹
     // PHE Ogan Komering 자체 8인치, SKG-1 Limau Timur 자체 10인치 연결은 아직 보류 (엔드포인트 미정)
-    { from: 'SKG 10', to: 'SKG-1 Limau Timur', diameter: '28"', color: '#3b82f6' },
+    { from: 'SKG 10', to: 'SKG-1 Limau Timur', diameter: '12"', color: '#3b82f6', group: '28' }, // 실제 12인치, 28인치 그룹으로 분류
     { from: 'SKG-1 Limau Timur', to: 'PHE Ogan Komering', diameter: '28"', color: '#3b82f6' }
   ];
 
@@ -318,7 +318,7 @@
   function computeStationColors() {
     const hasMain = {}, has28 = {};
     PIPE_SEGMENTS.forEach(seg => {
-      const bucket = seg.diameter === '28"' ? has28 : hasMain;
+      const bucket = computeSegmentGroup(seg) === '28' ? has28 : hasMain;
       bucket[seg.from] = true;
       bucket[seg.to] = true;
     });
