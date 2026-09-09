@@ -433,21 +433,36 @@
   // 고정 줌(MIN_OVERVIEW_ZOOM)에서는 fitBounds로 모든 지점을 다 담을 수 없어서,
   // 중심 좌표를 직접 계산해서 배치함: 가로는 TEP~Fractionation Plant 중간, 세로는 전체 위도 중간에서
   // 살짝 남쪽으로(흐름도 팝업이 가리는 위쪽은 신경 쓰지 않아도 되므로).
-  function fitAllStations() {
+  // 픽셀 오프셋을 위도/경도 오프셋으로 직접 변환(Web Mercator, closed-form).
+  // map.getProjection()이 필요 없어서 지도가 생기기 전(생성자 옵션)에도 미리 계산할 수 있음 -
+  // 그래야 처음 로드 시 "엉뚱한 위치에서 시작해서 이동하는" 애니메이션 없이 바로 정위치에서 시작함.
+  function pixelsToDegrees(dx, dy, zoom, atLat) {
+    const worldPx = 256 * Math.pow(2, zoom);
+    const dLng = dx * 360 / worldPx;
+    const dLat = -dy * 360 / worldPx * Math.cos(atLat * Math.PI / 180);
+    return { dLat, dLng };
+  }
+
+  // 기본보기 중심 좌표: 가로는 TEP~Fractionation Plant 중간, 세로는 전체 위도 중간에서 남쪽으로,
+  // 그리고 왼쪽 사이드바/팝업을 피해 화면상 살짝 오른쪽·아래로 치우치도록 보정.
+  function computeOverviewCenter() {
     const tep = findStation('TEP');
     const frac = findStation('Fractionation Plant');
     const lats = STATIONS.map(s => s.lat);
     const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-    const centerLng = (tep.lng + frac.lng) / 2;
-    const centerLat = (minLat + maxLat) / 2 - CENTER_LAT_SOUTH_SHIFT;
-    map.setCenter({ lat: centerLat, lng: centerLng });
+    const baseLat = (minLat + maxLat) / 2 - CENTER_LAT_SOUTH_SHIFT;
+    const baseLng = (tep.lng + frac.lng) / 2;
+
+    const appEl = document.getElementById('app');
+    const collapsed = appEl && appEl.classList.contains('collapsed');
+    const dx = collapsed ? 100 : -180, dy = -160;
+    const { dLat, dLng } = pixelsToDegrees(dx, dy, MIN_OVERVIEW_ZOOM, baseLat);
+    return { lat: baseLat + dLat, lng: baseLng + dLng };
+  }
+
+  function fitAllStations() {
+    map.setCenter(computeOverviewCenter());
     map.setZoom(MIN_OVERVIEW_ZOOM);
-    // panBy는 지도 projection이 준비된 뒤에야 실제로 동작하므로 idle 이후로 미룸
-    // (setCenter 직후 바로 호출하면 특히 최초 로드 시 조용히 무시됨)
-    google.maps.event.addListenerOnce(map, 'idle', () => {
-      const collapsed = document.getElementById('app').classList.contains('collapsed');
-      map.panBy(collapsed ? 100 : -180, -160); // 왼쪽 사이드바를 피하면서도 조금 더 왼쪽/아래로
-    });
   }
 
   function resetView() {
@@ -549,12 +564,10 @@
   }
 
   window.initMap = function () {
-    const bounds = new google.maps.LatLngBounds();
-    STATIONS.forEach(s => bounds.extend({ lat: s.lat, lng: s.lng }));
-
+    // 처음부터 최종 기본보기 위치/줌으로 바로 시작 - 엉뚱한 위치에서 시작해 이동하는 애니메이션 방지
     map = new google.maps.Map(document.getElementById('map'), {
-      center: bounds.getCenter(),
-      zoom: 8,
+      center: computeOverviewCenter(),
+      zoom: MIN_OVERVIEW_ZOOM,
       mapId: 'DEMO_MAP_ID', // AdvancedMarkerElement(커스텀 핀) 사용에 필요
       mapTypeId: 'satellite',
       mapTypeControl: true,
@@ -621,8 +634,6 @@
       nameLabel.addListener('click', () => selectStation(i));
       nameLabels.push(nameLabel);
     });
-
-    fitAllStations();
 
     // 실제 배관 구간(PIPE_SEGMENTS)마다 점선 + "거리 · 관경" 라벨을 그림.
     // 같은 두 지점을 잇는 구간이 여러 개면(예: 20"+28") 서로 겹치지 않게 살짝 벌려서 그림.
