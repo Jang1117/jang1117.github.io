@@ -106,10 +106,8 @@
   .fd-arrow { color: #64748b; font-size: 14px; }
   .fd-arrow.up { font-size: 13px; }
   .fd-branch-row { display: flex; gap: 6px; align-items: center; }
-  .fd-longarrow-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .fd-longarrow-svg { width: 170px; height: 14px; display: block; }
   .fd-longarrow-branches { display: flex; gap: 26px; }
-  .fd-branch-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 
   /* ===== 마커 위 이름 라벨 (구글 InfoWindow 대신 커스텀 DOM 사용 - 빈 공간/닫기 버튼 없음, 항상 표시) ===== */
   .name-label {
@@ -178,31 +176,33 @@
 
     <div class="fd-group">
       <div class="fd-group-title" style="color:#3b82f6">28" 그룹</div>
-      <div class="fd-grid" style="grid-template-columns: repeat(9, auto); grid-template-rows: auto;">
+      <div class="fd-grid" style="grid-template-columns: repeat(9, auto);">
         <div class="fd-box" style="border-color:#3b82f6">Musi Timur</div>
         <div class="fd-arrow">→</div>
         <div class="fd-box" style="border-color:#3b82f6">Musi Barat</div>
-        <div class="fd-longarrow-wrap">
-          <svg class="fd-longarrow-svg" viewBox="0 0 170 14" preserveAspectRatio="none">
-            <line x1="2" y1="7" x2="158" y2="7" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3"/>
-            <polygon points="158,2 168,7 158,12" fill="#64748b"/>
-          </svg>
-          <div class="fd-longarrow-branches">
-            <div class="fd-branch-col">
-              <div class="fd-arrow up">↑</div>
-              <div class="fd-box sub" style="border-color:#3b82f6">TEP</div>
-            </div>
-            <div class="fd-branch-col">
-              <div class="fd-arrow up">↑</div>
-              <div class="fd-box sub" style="border-color:#3b82f6">KSO IHE</div>
-            </div>
-          </div>
-        </div>
+        <svg class="fd-longarrow-svg" viewBox="0 0 170 14" preserveAspectRatio="none">
+          <line x1="2" y1="7" x2="158" y2="7" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <polygon points="158,2 168,7 158,12" fill="#64748b"/>
+        </svg>
         <div class="fd-box" style="border-color:#3b82f6">Benuang SKG 18</div>
         <div class="fd-arrow">→</div>
         <div class="fd-box" style="border-color:#3b82f6">SKG 10</div>
         <div class="fd-arrow">→</div>
         <div class="fd-box" style="border-color:#3b82f6">Extraction Plant</div>
+
+        <div></div><div></div><div></div>
+        <div class="fd-longarrow-branches">
+          <div class="fd-arrow up">↑</div>
+          <div class="fd-arrow up">↑</div>
+        </div>
+        <div></div><div></div><div></div><div></div><div></div>
+
+        <div></div><div></div><div></div>
+        <div class="fd-longarrow-branches">
+          <div class="fd-box sub" style="border-color:#3b82f6">TEP</div>
+          <div class="fd-box sub" style="border-color:#3b82f6">KSO IHE</div>
+        </div>
+        <div></div><div></div><div></div><div></div><div></div>
       </div>
     </div>
   </div>
