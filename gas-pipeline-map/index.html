@@ -256,21 +256,21 @@
     <div class="toggle-row">
       <span>20" 라인 표시</span>
       <label class="switch">
-        <input type="checkbox" checked onchange="toggleGroup('main', this.checked)">
+        <input type="checkbox" id="mainLineToggle" checked onchange="toggleGroup('main', this.checked)">
         <span class="slider"></span>
       </label>
     </div>
     <div class="toggle-row">
       <span>28" 라인 표시</span>
       <label class="switch">
-        <input type="checkbox" checked onchange="toggleGroup('28', this.checked)">
+        <input type="checkbox" id="line28Toggle" checked onchange="toggleGroup('28', this.checked)">
         <span class="slider"></span>
       </label>
     </div>
     <div class="toggle-row">
       <span>NLG 라인 표시</span>
       <label class="switch">
-        <input type="checkbox" checked onchange="toggleGroup('nlg', this.checked)">
+        <input type="checkbox" id="nlgLineToggle" checked onchange="toggleGroup('nlg', this.checked)">
         <span class="slider"></span>
       </label>
     </div>
@@ -338,12 +338,39 @@
     return STATIONS.find(s => s.name === name);
   }
 
-  // Feed Gas Flow 팝업(20"/28" 그룹 다이어그램)에 나오는 지점들 - 이 지점들만 마커 이름표를
-  // 노란색으로 표시해서 다이어그램과 지도를 서로 대조하기 쉽게 함
-  const FLOW_DIAGRAM_STATIONS = new Set([
-    'Musi Timur', 'Rambutan Medco', 'Betung', 'SKG 10', 'Extraction Plant', 'Teras Medco',
-    'Musi Barat', 'Benuang SKG 18', 'TEP', 'KSO IHE'
-  ]);
+  // 각 그룹('main'/'28'/'nlg')에 속한 스테이션 이름 목록 계산
+  function computeGroupStationSets() {
+    const sets = { main: new Set(), '28': new Set(), nlg: new Set() };
+    PIPE_SEGMENTS.forEach(seg => {
+      const g = computeSegmentGroup(seg);
+      if (!sets[g]) sets[g] = new Set();
+      sets[g].add(seg.from);
+      sets[g].add(seg.to);
+    });
+    return sets;
+  }
+
+  // 라인 표시 토글 중 딱 하나만 켜져 있을 때만, 그 그룹에 속한 지점의 마커 이름표를
+  // 노란색으로 강조해서 지도에서 바로 찾기 쉽게 함. 여러 개(또는 0개) 켜져 있으면 기본(흰색).
+  function updateStationHighlights() {
+    const mainOn = document.getElementById('mainLineToggle')?.checked;
+    const line28On = document.getElementById('line28Toggle')?.checked;
+    const nlgOn = document.getElementById('nlgLineToggle')?.checked;
+    const onCount = [mainOn, line28On, nlgOn].filter(Boolean).length;
+
+    let highlightSet = new Set();
+    if (onCount === 1) {
+      const groupSets = computeGroupStationSets();
+      if (mainOn) highlightSet = groupSets.main;
+      else if (line28On) highlightSet = groupSets['28'];
+      else if (nlgOn) highlightSet = groupSets.nlg;
+    }
+
+    STATIONS.forEach((s, i) => {
+      const el = nameLabels[i] && nameLabels[i].content;
+      if (el) el.classList.toggle('flow-highlight', highlightSet.has(s.name));
+    });
+  }
 
   // 라인/라벨 표시 토글에 쓰이는 그룹 키: 'main'(20인치 등 기본망) / '28' / 'nlg' 등 seg.group으로 명시 가능
   function computeSegmentGroup(seg) {
@@ -560,6 +587,8 @@
       const el = document.getElementById(fdGroupId);
       if (el) el.classList.toggle('hidden', !visible);
     }
+
+    updateStationHighlights();
   }
 
   // 이미지 마커 로드 실패 시 번호 배지로 대체
@@ -631,7 +660,7 @@
 
       // 이름 라벨은 항상 마커 위에 떠 있음 (줌 레벨과 무관). 라벨 클릭도 마커 클릭과 동일하게 동작
       const nameEl = document.createElement('div');
-      nameEl.className = 'name-label' + (FLOW_DIAGRAM_STATIONS.has(s.name) ? ' flow-highlight' : '');
+      nameEl.className = 'name-label';
       nameEl.textContent = s.name;
       const nameLabel = new google.maps.marker.AdvancedMarkerElement({
         position: { lat: s.lat, lng: s.lng },
@@ -643,6 +672,8 @@
       nameLabel.addListener('click', () => selectStation(i));
       nameLabels.push(nameLabel);
     });
+
+    updateStationHighlights();
 
     // 실제 배관 구간(PIPE_SEGMENTS)마다 점선 + "거리 · 관경" 라벨을 그림.
     // 같은 두 지점을 잇는 구간이 여러 개면(예: 20"+28") 서로 겹치지 않게 살짝 벌려서 그림.
