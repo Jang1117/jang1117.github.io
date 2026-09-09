@@ -65,16 +65,44 @@
   .legend-item { display: flex; align-items: center; gap: 5px; }
   .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
-  #sidebarToggle, #resetViewBtn {
+  #sidebarToggle, #resetViewBtn, #flowDiagramBtn {
     position: absolute; top: 14px; z-index: 11; width: 32px; height: 32px; border-radius: 8px;
     border: none; background: #1e293b; color: #e2e8f0; cursor: pointer; font-size: 14px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: left 0.2s;
   }
   #sidebarToggle { left: 314px; }
   #resetViewBtn { left: 354px; }
+  #flowDiagramBtn { left: 394px; }
   #app.collapsed #sidebar { transform: translateX(-300px); }
   #app.collapsed #sidebarToggle { left: 14px; }
   #app.collapsed #resetViewBtn { left: 54px; }
+  #app.collapsed #flowDiagramBtn { left: 94px; }
+
+  /* ===== Flow diagram popup ===== */
+  #flowDiagramPopup {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 30;
+    background: rgba(15,23,42,0.96); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
+    padding: 18px 24px 22px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); color: #e2e8f0;
+    max-width: 92vw; overflow-x: auto;
+  }
+  #flowDiagramPopup.hidden { display: none; }
+  #flowDiagramPopup .fd-close {
+    position: absolute; top: 8px; right: 10px; background: none; border: none; color: #94a3b8;
+    font-size: 16px; cursor: pointer; line-height: 1;
+  }
+  #flowDiagramPopup .fd-close:hover { color: #fff; }
+  .fd-group { margin-bottom: 18px; }
+  .fd-group:last-child { margin-bottom: 0; }
+  .fd-group-title { font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+  .fd-grid { display: grid; row-gap: 4px; column-gap: 6px; align-items: center; justify-items: center; }
+  .fd-box {
+    padding: 6px 10px; border-radius: 7px; border: 1.5px solid; font-size: 11px; font-weight: 700;
+    white-space: nowrap; background: rgba(255,255,255,0.05);
+  }
+  .fd-box.sub { font-size: 10px; padding: 4px 8px; font-weight: 600; opacity: 0.9; }
+  .fd-arrow { color: #64748b; font-size: 14px; }
+  .fd-arrow.up { font-size: 13px; }
+  .fd-branch-row { display: flex; gap: 6px; align-items: center; }
 
   /* ===== 마커 위 이름 라벨 (구글 InfoWindow 대신 커스텀 DOM 사용 - 빈 공간/닫기 버튼 없음, 항상 표시) ===== */
   .name-label {
@@ -114,6 +142,60 @@
 
   <button id="sidebarToggle" onclick="toggleSidebar()">☰</button>
   <button id="resetViewBtn" onclick="resetView()" title="처음 화면으로">⌂</button>
+  <button id="flowDiagramBtn" onclick="toggleFlowDiagram()" title="흐름도 보기">⛓</button>
+
+  <div id="flowDiagramPopup" class="hidden">
+    <button class="fd-close" onclick="toggleFlowDiagram(false)">✕</button>
+
+    <div class="fd-group">
+      <div class="fd-group-title" style="color:#f97316">20" 그룹</div>
+      <div class="fd-grid" style="grid-template-columns: repeat(9, auto);">
+        <div class="fd-box" style="border-color:#f97316">Musi Timur</div>
+        <div class="fd-arrow">→</div>
+        <div class="fd-box" style="border-color:#f97316">Rambutan Medco</div>
+        <div class="fd-arrow">→</div>
+        <div class="fd-box" style="border-color:#f97316">Betung</div>
+        <div class="fd-arrow">→</div>
+        <div class="fd-box" style="border-color:#f97316">SKG 10</div>
+        <div class="fd-arrow">→</div>
+        <div class="fd-box" style="border-color:#f97316">Extraction Plant</div>
+
+        <div></div><div></div>
+        <div class="fd-arrow up">↑</div>
+        <div></div><div></div><div></div><div></div><div></div><div></div>
+
+        <div></div><div></div>
+        <div class="fd-box sub" style="border-color:#f97316">Teras Medco</div>
+        <div></div><div></div><div></div><div></div><div></div><div></div>
+      </div>
+    </div>
+
+    <div class="fd-group">
+      <div class="fd-group-title" style="color:#3b82f6">28" 그룹</div>
+      <div class="fd-grid" style="grid-template-columns: repeat(9, auto);">
+        <div class="fd-box" style="border-color:#3b82f6">Musi Timur</div>
+        <div class="fd-arrow">→</div>
+        <div class="fd-box" style="border-color:#3b82f6">Musi Barat</div>
+        <div class="fd-arrow" style="justify-self: stretch; text-align:center;">⟶⟶⟶</div>
+        <div class="fd-box" style="border-color:#3b82f6">Benuang SKG 18</div>
+        <div class="fd-arrow">→</div>
+        <div class="fd-box" style="border-color:#3b82f6">SKG 10</div>
+        <div class="fd-arrow">→</div>
+        <div class="fd-box" style="border-color:#3b82f6">Extraction Plant</div>
+
+        <div></div><div></div><div></div>
+        <div class="fd-arrow up">↑</div>
+        <div></div><div></div><div></div><div></div><div></div>
+
+        <div></div><div></div><div></div>
+        <div class="fd-branch-row">
+          <div class="fd-box sub" style="border-color:#3b82f6">TEP</div>
+          <div class="fd-box sub" style="border-color:#3b82f6">KSO IHE</div>
+        </div>
+        <div></div><div></div><div></div><div></div><div></div>
+      </div>
+    </div>
+  </div>
 
   <div id="sidebar">
     <header>
@@ -144,20 +226,28 @@
     <div class="toggle-row">
       <span>20" 라인 표시</span>
       <label class="switch">
-        <input type="checkbox" checked onchange="toggleMainNetwork(this.checked)">
+        <input type="checkbox" checked onchange="toggleGroup('main', this.checked)">
         <span class="slider"></span>
       </label>
     </div>
     <div class="toggle-row">
       <span>28" 라인 표시</span>
       <label class="switch">
-        <input type="checkbox" checked onchange="toggleDiameter('28&quot;', this.checked)">
+        <input type="checkbox" checked onchange="toggleGroup('28', this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span>NLG 라인 표시</span>
+      <label class="switch">
+        <input type="checkbox" checked onchange="toggleGroup('nlg', this.checked)">
         <span class="slider"></span>
       </label>
     </div>
     <div id="legend">
       <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span>20" 그룹</div>
       <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>28" 라인</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>NLG 라인</div>
       <div class="legend-item"><span class="legend-dot" style="background:#a855f7"></span>둘 다 지나감</div>
     </div>
     <div id="stationList"></div>
@@ -204,7 +294,7 @@
     { from: 'Benuang SKG 18', to: 'SKG 10', diameter: '28"', color: '#3b82f6' },
     { from: 'SKG 10', to: 'Extraction Plant', diameter: '20"' },
     { from: 'SKG 10', to: 'Extraction Plant', diameter: '28"', color: '#3b82f6' },
-    { from: 'Extraction Plant', to: 'Fractionation Plant', diameter: '8"' },
+    { from: 'Extraction Plant', to: 'Fractionation Plant', diameter: '8"', color: '#22c55e', group: 'nlg' }, // NLG 라인 - 별도 그룹
     // PHE Ogan Komering 자체 8인치, SKG-1 Limau Timur 자체 10인치 연결은 아직 보류 (엔드포인트 미정)
     { from: 'SKG 10', to: 'SKG-1 Limau Timur', diameter: '28"', color: '#3b82f6' },
     { from: 'SKG-1 Limau Timur', to: 'PHE Ogan Komering', diameter: '28"', color: '#3b82f6' }
@@ -212,6 +302,12 @@
 
   function findStation(name) {
     return STATIONS.find(s => s.name === name);
+  }
+
+  // 라인/라벨 표시 토글에 쓰이는 그룹 키: 'main'(20인치 등 기본망) / '28' / 'nlg' 등 seg.group으로 명시 가능
+  function computeSegmentGroup(seg) {
+    if (seg.group) return seg.group;
+    return seg.diameter === '28"' ? '28' : 'main';
   }
 
   const LINE28_COLOR = '#3b82f6';   // 28인치 라인 색상
@@ -313,6 +409,13 @@
     setTimeout(() => { if (map) google.maps.event.trigger(map, 'resize'); }, 210);
   }
 
+  // 20"/28" 그룹 개요를 보여주는 흐름도 팝업. force가 주어지면 그 값으로, 아니면 토글.
+  function toggleFlowDiagram(force) {
+    const popup = document.getElementById('flowDiagramPopup');
+    const show = typeof force === 'boolean' ? force : popup.classList.contains('hidden');
+    popup.classList.toggle('hidden', !show);
+  }
+
   function metersToKm(m) { return (m / 1000).toFixed(1); }
 
   function buildSidebar(totalDistanceM) {
@@ -363,16 +466,10 @@
     distanceLabels.forEach(l => { l.map = visible ? map : null; });
   }
 
-  // 특정 관경(예: '28"')의 라인/라벨만 켜고 끔
-  function toggleDiameter(diameter, visible) {
-    pipelineLines.forEach(l => { if (l.__diameter === diameter) l.setMap(visible ? map : null); });
-    distanceLabels.forEach(l => { if (l.__diameter === diameter) l.map = visible ? map : null; });
-  }
-
-  // "20인치 라인" 버튼: 28인치(직결 라인)를 제외한 나머지 배관망 전체를 켜고 끔
-  function toggleMainNetwork(visible) {
-    pipelineLines.forEach(l => { if (l.__diameter !== '28"') l.setMap(visible ? map : null); });
-    distanceLabels.forEach(l => { if (l.__diameter !== '28"') l.map = visible ? map : null; });
+  // 그룹('main' / '28' / 'nlg')별로 라인/라벨을 켜고 끔
+  function toggleGroup(group, visible) {
+    pipelineLines.forEach(l => { if (l.__group === group) l.setMap(visible ? map : null); });
+    distanceLabels.forEach(l => { if (l.__group === group) l.map = visible ? map : null; });
   }
 
   // 이미지 마커 로드 실패 시 번호 배지로 대체
@@ -485,7 +582,7 @@
         }],
         map
       });
-      line.__diameter = seg.diameter;
+      line.__group = computeSegmentGroup(seg);
       pipelineLines.push(line);
 
       // 거리는 실제 두 지점 사이(오프셋 적용 전) 값으로 계산
@@ -512,7 +609,7 @@
         title: seg.diameter ? `${seg.from} → ${seg.to} (${seg.diameter})` : `${seg.from} → ${seg.to}`,
         collisionBehavior: google.maps.CollisionBehavior.REQUIRED
       });
-      labelMarker.__diameter = seg.diameter;
+      labelMarker.__group = computeSegmentGroup(seg);
       distanceLabels.push(labelMarker);
     });
 
