@@ -96,6 +96,7 @@
   #flowDiagramPopup .fd-close:hover { color: #fff; }
   .fd-group { margin-bottom: 18px; }
   .fd-group:last-child { margin-bottom: 0; }
+  .fd-group.hidden { display: none; }
   .fd-group-title { font-size: 12px; font-weight: 700; margin-bottom: 10px; }
   .fd-grid { display: grid; row-gap: 4px; column-gap: 6px; align-items: center; justify-items: center; }
   .fd-box {
@@ -152,7 +153,7 @@
   <div id="flowDiagramPopup">
     <button class="fd-close" onclick="closeFlowDiagram()">✕</button>
 
-    <div class="fd-group">
+    <div class="fd-group" id="fdGroup20">
       <div class="fd-group-title" style="color:#f97316">20" 그룹</div>
       <div class="fd-grid" style="grid-template-columns: repeat(9, auto);">
         <div class="fd-box" style="border-color:#f97316">Musi Timur</div>
@@ -175,7 +176,7 @@
       </div>
     </div>
 
-    <div class="fd-group">
+    <div class="fd-group" id="fdGroup28">
       <div class="fd-group-title" style="color:#3b82f6">28" 그룹</div>
       <div class="fd-grid" style="grid-template-columns: repeat(9, auto);">
         <div class="fd-box" style="border-color:#3b82f6">Musi Timur</div>
@@ -502,10 +503,16 @@
     distanceLabels.forEach(l => { l.map = visible ? map : null; });
   }
 
-  // 그룹('main' / '28' / 'nlg')별로 라인/라벨을 켜고 끔
+  // 그룹('main' / '28' / 'nlg')별로 라인/라벨을 켜고 끔. 흐름도 팝업의 해당 그룹 섹션도 같이 켜고 끔.
   function toggleGroup(group, visible) {
     pipelineLines.forEach(l => { if (l.__group === group) l.setMap(visible ? map : null); });
     distanceLabels.forEach(l => { if (l.__group === group) l.map = visible ? map : null; });
+
+    const fdGroupId = group === 'main' ? 'fdGroup20' : group === '28' ? 'fdGroup28' : null;
+    if (fdGroupId) {
+      const el = document.getElementById(fdGroupId);
+      if (el) el.classList.toggle('hidden', !visible);
+    }
   }
 
   // 이미지 마커 로드 실패 시 번호 배지로 대체
