@@ -482,8 +482,7 @@
     popup.classList.toggle('hidden', !show);
     const toggleInput = document.getElementById('flowDiagramToggle');
     if (toggleInput) toggleInput.checked = show;
-    // 팝업이 열리고 닫힐 때마다, 그만큼의 여백을 반영해서 지도를 다시 맞춤(마커가 안 가리도록)
-    if (map) fitAllStations();
+    // 팝업 on/off는 현재 지도 위치/줌에 영향을 주지 않음 (사용자가 보던 화면 그대로 유지)
   }
 
   // 팝업 안의 닫기(X) 버튼: 사이드바 스위치도 같이 꺼서 상태를 맞춰줌
