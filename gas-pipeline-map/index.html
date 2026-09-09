@@ -85,32 +85,40 @@
   #flowDiagramPopup {
     position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 30;
     background: rgba(15,23,42,0.96); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
-    padding: 18px 24px 22px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); color: #e2e8f0;
-    max-width: 92vw; overflow-x: auto;
+    padding: 14px 16px 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); color: #e2e8f0;
+    max-width: 99vw; overflow-x: auto;
   }
   #flowDiagramPopup.hidden { display: none; }
+  /* JS가 콘텐츠 실제 폭을 재서 뷰포트보다 넓으면 #fdContent를 scale()로 축소함 - 가로 스크롤 방지 */
+  #fdViewport { overflow: hidden; }
+  #fdContent { transform-origin: top left; }
   #flowDiagramPopup .fd-close {
     position: absolute; top: 8px; right: 10px; background: none; border: none; color: #94a3b8;
     font-size: 16px; cursor: pointer; line-height: 1;
   }
   #flowDiagramPopup .fd-close:hover { color: #fff; }
-  .fd-group { margin-bottom: 18px; }
+  .fd-group { margin-bottom: 16px; }
   .fd-group:last-child { margin-bottom: 0; }
   .fd-group.hidden { display: none; }
-  .fd-group-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
-  .fd-grid { display: grid; row-gap: 4px; column-gap: 6px; align-items: center; justify-items: center; }
+  .fd-group-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+  /* width:max-content로 각 그룹 그리드가 항상 자기 콘텐츠만큼만 폭을 차지하게 함 - 그렇지 않으면
+     width:auto인 블록이 부모(#fdContent, 다른 그룹 때문에 더 넓어질 수 있음) 폭을 그대로 채우고,
+     grid의 기본 justify-content(stretch)가 auto 트랙들을 남는 폭만큼 늘려서 박스 위치가
+     다른 그룹의 표시 여부에 따라 달라져 보이는 문제가 생김. */
+  .fd-grid { display: grid; width: max-content; row-gap: 4px; column-gap: 5px; align-items: center; justify-items: center; }
   .fd-box {
-    padding: 7px 12px; border-radius: 7px; border: 1.5px solid; font-size: 13px; font-weight: 700;
+    padding: 5px 9px; border-radius: 7px; border: 1.5px solid; font-size: 12px; font-weight: 700;
     white-space: nowrap; background: rgba(255,255,255,0.05);
   }
-  .fd-box.sub { padding: 5px 10px; }
   .fd-arrow-svg { display: block; }
-  .fd-arrow-svg.horiz { width: 26px; height: 14px; }
-  .fd-arrow-svg.vert { width: 14px; height: 22px; }
-  .fd-longarrow-svg { width: 170px; height: 14px; display: block; }
+  .fd-arrow-svg.horiz { width: 22px; height: 12px; }
+  .fd-arrow-svg.vert { width: 12px; height: 18px; }
+  .fd-arrow-svg.vert-long { width: 12px; height: 34px; }
+  .fd-longarrow-svg { width: 312px; height: 12px; display: block; }
   /* 화살표를 자기 박스 바로 위(가로 중앙)에 붙이기 위해 화살표+박스를 하나의 세로 묶음으로 짝지음 */
-  .fd-branch-group { display: flex; gap: 26px; }
-  .fd-branch-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .fd-branch-group { display: flex; gap: 20px; }
+  .fd-branch-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .fd-inline-row { display: flex; align-items: center; gap: 5px; }
 
   /* ===== 마커 위 이름 라벨 (구글 InfoWindow 대신 커스텀 DOM 사용 - 빈 공간/닫기 버튼 없음, 항상 표시) ===== */
   .name-label {
@@ -164,47 +172,93 @@
         <line x1="7" y1="21" x2="7" y2="8" stroke="#64748b" stroke-width="1.5"/>
         <polygon points="2,8 12,8 7,1" fill="#64748b"/>
       </symbol>
+      <symbol id="fd-arrow-up-long" viewBox="0 0 14 40">
+        <line x1="7" y1="39" x2="7" y2="8" stroke="#64748b" stroke-width="1.5"/>
+        <polygon points="2,8 12,8 7,1" fill="#64748b"/>
+      </symbol>
     </svg>
     <button class="fd-close" onclick="closeFlowDiagram()">✕</button>
 
+    <div id="fdViewport">
+    <div id="fdContent">
     <div class="fd-group" id="fdGroup20">
       <div class="fd-group-title" style="color:#f97316">20" 그룹</div>
-      <div class="fd-grid" style="grid-template-columns: repeat(9, auto);">
-        <div class="fd-box" style="border-color:#f97316">Musi Timur</div>
-        <svg class="fd-arrow-svg horiz"><use href="#fd-arrow-right"/></svg>
-        <div class="fd-box" style="border-color:#f97316">Rambutan Medco</div>
-        <svg class="fd-arrow-svg horiz"><use href="#fd-arrow-right"/></svg>
-        <div class="fd-box" style="border-color:#f97316">Betung</div>
-        <svg class="fd-arrow-svg horiz"><use href="#fd-arrow-right"/></svg>
+      <!-- SKG 10 칸(3번째 열)만 고정 폭으로 둬서, 그 아래(row3)에 훨씬 넓은 PHE Ogan/Limau
+           지류가 들어가도 그 칸이 늘어나 SKG 10 위치가 틀어지는 일이 없게 함 -->
+      <div class="fd-grid" id="fd20Grid" style="grid-template-columns: auto 312px 90px auto auto;">
+        <div class="fd-box" id="fd20Start" style="border-color:#f97316">Musi Timur</div>
+        <svg class="fd-longarrow-svg" id="fd20Arrow" viewBox="0 0 300 14" preserveAspectRatio="none">
+          <line x1="2" y1="7" x2="286" y2="7" stroke="#64748b" stroke-width="1.5"/>
+          <polygon points="286,2 296,7 286,12" fill="#64748b"/>
+        </svg>
         <div class="fd-box" style="border-color:#f97316">SKG 10</div>
-        <svg class="fd-arrow-svg horiz"><use href="#fd-arrow-right"/></svg>
-        <div class="fd-box" style="border-color:#f97316">Extraction Plant</div>
+        <!-- 하나의 SVG로 선+화살촉을 함께 그림(선/화살촉을 별개 엘리먼트로 나누면 그 경계에서
+             틈이 보이는 문제가 있었음). viewBox를 항상 실제 렌더링 폭과 1:1로 맞추고, 화살촉
+             좌표(polygon)도 JS로 매번 다시 계산해서 폭이 얼마가 되든 화살촉 크기가 항상
+             일정하게(찌그러들지 않게) 유지되게 함. -->
+        <svg id="fd20Arrow2" viewBox="0 0 40 14" style="width: 40px; height: 12px; display: block;">
+          <line id="fd20Arrow2Line" x1="0" y1="7" x2="30" y2="7" stroke="#64748b" stroke-width="2"/>
+          <polygon id="fd20Arrow2Head" points="30,2 40,7 30,12" fill="#64748b"/>
+        </svg>
+        <div class="fd-box" id="fd20End" style="border-color:#f97316">Extraction Plant</div>
 
-        <div></div><div></div>
-        <svg class="fd-arrow-svg vert"><use href="#fd-arrow-up"/></svg>
-        <div></div><div></div><div></div><div></div><div></div><div></div>
+        <div class="fd-branch-group" id="fd20BranchGroup" style="grid-column: 2; grid-row: 2; justify-self: start; align-self: end; margin-left: -84px;">
+          <div class="fd-branch-col">
+            <!-- Teras -> Rambutan: 화살표가 Rambutan 박스 폭만 보고 정렬되도록 [화살표+Rambutan]을
+                 별도의 좁은 묶음으로 격리(Teras 폭이 섞이지 않게). 이 화살표가 곧 메인 라인으로
+                 연결되는 화살표를 겸함. -->
+            <div class="fd-inline-row" style="align-items: flex-end;">
+              <div class="fd-inline-row" style="align-items: center;">
+                <div class="fd-box sub" style="border-color:#f97316">Teras Medco</div>
+                <svg class="fd-arrow-svg horiz"><use href="#fd-arrow-right"/></svg>
+              </div>
+              <div class="fd-branch-col">
+                <svg class="fd-arrow-svg vert"><use href="#fd-arrow-up"/></svg>
+                <div class="fd-box" id="fd20Rambutan" style="border-color:#f97316">Rambutan Medco</div>
+              </div>
+            </div>
+          </div>
+          <div class="fd-branch-col">
+            <svg class="fd-arrow-svg vert"><use href="#fd-arrow-up"/></svg>
+            <div class="fd-box" id="fd20Betung" style="border-color:#f97316">Betung</div>
+          </div>
+        </div>
 
-        <div></div><div></div>
-        <div class="fd-box sub" style="border-color:#f97316">Teras Medco</div>
-        <div></div><div></div><div></div><div></div><div></div><div></div>
+        <!-- PHE Ogan -> Limau -> SKG 10: SKG 10 칸이 고정 폭이라 이 지류가 넓어도 위쪽 정렬에
+             영향을 안 줌. Limau를 맨 앞(왼쪽)에 두고 justify-self:start로 그 칸 폭(90px)에
+             거의 맞춰 SKG 10 바로 아래에 오도록 정렬, PHE는 Limau 오른쪽으로 이어지게 함.
+             화살표는 PHE->Limau 흐름이므로 오른쪽 화살표를 좌우 반전해서 왼쪽을 가리키게 함.
+             위/오른쪽 화살표 둘 다 Limau 박스를 기준으로 absolute 배치해서, 서로의 폭/높이에
+             영향받지 않고 각각 박스의 가로 중앙(위 화살표) / 세로 중앙(오른쪽 화살표)에 고정됨. -->
+        <div class="fd-inline-row" id="fd20LimauRow" style="grid-column: 3; grid-row: 2; justify-self: start; align-self: end; align-items: center;">
+          <div class="fd-box sub" style="border-color:#f97316; position: relative; margin-right: 30px;">
+            Limau Timur
+            <svg class="fd-arrow-svg vert" style="position: absolute; left: 50%; bottom: 100%; margin-bottom: 3px; transform: translateX(-50%);"><use href="#fd-arrow-up"/></svg>
+            <svg class="fd-arrow-svg horiz" style="position: absolute; left: calc(100% + 5px); top: 50%; transform: translateY(-50%) scaleX(-1);"><use href="#fd-arrow-right"/></svg>
+          </div>
+          <div class="fd-box sub" style="border-color:#f97316">PHE Ogan Komering</div>
+        </div>
       </div>
     </div>
 
     <div class="fd-group" id="fdGroup28">
       <div class="fd-group-title" style="color:#3b82f6">28" 그룹</div>
-      <div class="fd-grid" style="grid-template-columns: repeat(9, auto);">
-        <div class="fd-box" style="border-color:#3b82f6">Musi Timur</div>
+      <!-- 4번째 칸(긴 화살표)을 고정 폭으로 둬서, 같은 칸의 TEP/KSO IHE/Benuang 지류(row2)가
+           더 넓어도 화살표 칸이 거기 맞춰 늘어나 화살표만 짧게 보이는 일이 없게 함(JS가 폭 조정) -->
+      <div class="fd-grid" id="fd28Grid" style="grid-template-columns: auto auto auto 312px auto auto auto;">
+        <div class="fd-box" id="fd28Start" style="border-color:#3b82f6">Musi Timur</div>
         <svg class="fd-arrow-svg horiz"><use href="#fd-arrow-right"/></svg>
         <div class="fd-box" style="border-color:#3b82f6">Musi Barat</div>
-        <svg class="fd-longarrow-svg" viewBox="0 0 170 14" preserveAspectRatio="none">
-          <line x1="2" y1="7" x2="158" y2="7" stroke="#64748b" stroke-width="1.5"/>
-          <polygon points="158,2 168,7 158,12" fill="#64748b"/>
+        <svg class="fd-longarrow-svg" id="fd28Arrow" viewBox="0 0 300 14" preserveAspectRatio="none">
+          <line x1="2" y1="7" x2="286" y2="7" stroke="#64748b" stroke-width="1.5"/>
+          <polygon points="286,2 296,7 286,12" fill="#64748b"/>
         </svg>
-        <div class="fd-box" style="border-color:#3b82f6">Benuang SKG 18</div>
-        <svg class="fd-arrow-svg horiz"><use href="#fd-arrow-right"/></svg>
         <div class="fd-box" style="border-color:#3b82f6">SKG 10</div>
-        <svg class="fd-arrow-svg horiz"><use href="#fd-arrow-right"/></svg>
-        <div class="fd-box" style="border-color:#3b82f6">Extraction Plant</div>
+        <svg id="fd28Arrow2" viewBox="0 0 40 14" style="width: 40px; height: 12px; display: block;">
+          <line id="fd28Arrow2Line" x1="0" y1="7" x2="30" y2="7" stroke="#64748b" stroke-width="2"/>
+          <polygon id="fd28Arrow2Head" points="30,2 40,7 30,12" fill="#64748b"/>
+        </svg>
+        <div class="fd-box" id="fd28End" style="border-color:#3b82f6">Extraction Plant</div>
 
         <div class="fd-branch-group" style="grid-column: 4; grid-row: 2;">
           <div class="fd-branch-col">
@@ -215,8 +269,14 @@
             <svg class="fd-arrow-svg vert"><use href="#fd-arrow-up"/></svg>
             <div class="fd-box sub" style="border-color:#3b82f6">KSO IHE</div>
           </div>
+          <div class="fd-branch-col">
+            <svg class="fd-arrow-svg vert"><use href="#fd-arrow-up"/></svg>
+            <div class="fd-box sub" style="border-color:#3b82f6">Benuang SKG 18</div>
+          </div>
         </div>
       </div>
+    </div>
+    </div>
     </div>
   </div>
 
@@ -354,6 +414,10 @@
   // 28" 강조에서는 제외
   const LINE28_PASS_THROUGH_STATIONS = new Set(['Teras Medco', 'Rambutan Medco', 'Betung']);
 
+  // Benuang SKG 18은 SKG 10/Betung과 20" 구간으로도 연결돼 있어 groupSets.main에도 들어가지만,
+  // 흐름도상으로는 28" 그룹(TEP/KSO IHE/Benuang 지류) 소속이므로 20" 강조에서는 제외
+  const MAIN_PASS_THROUGH_STATIONS = new Set(['Benuang SKG 18']);
+
   // "20\" 라인 표시"/"28\" 라인 표시" 중 딱 하나만 켜져 있을 때만, 그 그룹에 속한 지점의
   // 마커 이름표를 노란색으로 강조. NGL 토글은 이 판단에서 제외됨(켜져 있어도 무시).
   // 여러 개(또는 0개) 켜져 있으면 기본(흰색).
@@ -366,7 +430,7 @@
     if (onCount === 1) {
       const groupSets = computeGroupStationSets();
       if (mainOn) {
-        highlightSet = groupSets.main;
+        highlightSet = new Set([...groupSets.main].filter(n => !MAIN_PASS_THROUGH_STATIONS.has(n)));
       } else {
         highlightSet = new Set([...groupSets['28']].filter(n => !LINE28_PASS_THROUGH_STATIONS.has(n)));
       }
@@ -520,11 +584,11 @@
 
   // 20"/28" 그룹 개요를 보여주는 흐름도 팝업. force가 주어지면 그 값으로, 아니면 토글.
   function toggleFlowDiagram(force) {
-    const popup = document.getElementById('flowDiagramPopup');
-    const show = typeof force === 'boolean' ? force : popup.classList.contains('hidden');
-    popup.classList.toggle('hidden', !show);
     const toggleInput = document.getElementById('flowDiagramToggle');
+    const current = toggleInput ? toggleInput.checked : !document.getElementById('flowDiagramPopup').classList.contains('hidden');
+    const show = typeof force === 'boolean' ? force : !current;
     if (toggleInput) toggleInput.checked = show;
+    updateFlowDiagramVisibility();
     // 팝업 on/off는 현재 지도 위치/줌에 영향을 주지 않음 (사용자가 보던 화면 그대로 유지)
   }
 
@@ -532,6 +596,151 @@
   function closeFlowDiagram() {
     toggleFlowDiagram(false);
   }
+
+  // 실제 팝업 표시 여부 = "Feed Gas Flow" 스위치가 켜져 있고 AND 20"/28" 라인 중 하나라도 켜져 있을 때만.
+  // 20"/28" 둘 다 꺼져 있으면 보여줄 내용이 없으므로 빈 팝업(X 버튼만 있는)이 뜨지 않도록 함.
+  function updateFlowDiagramVisibility() {
+    const popup = document.getElementById('flowDiagramPopup');
+    const toggleInput = document.getElementById('flowDiagramToggle');
+    const mainOn = document.getElementById('mainLineToggle')?.checked;
+    const line28On = document.getElementById('line28Toggle')?.checked;
+    const wantShow = toggleInput ? toggleInput.checked : true;
+    const show = wantShow && (mainOn || line28On);
+    popup.classList.toggle('hidden', !show);
+    if (show) requestAnimationFrame(layoutFlowDiagram);
+  }
+
+  // fd20Arrow2/fd28Arrow2(선+화살촉이 하나의 SVG로 합쳐진 요소)의 폭을 바꿀 때, viewBox를 항상
+  // 실제 렌더링 폭과 1:1로 맞추고 화살촉(polygon) 좌표도 그에 맞게 다시 계산해서, 폭이 얼마든
+  // 화살촉 크기가 항상 일정하게(비율로 찌그러들지 않게) 유지되면서 선과 화살촉 사이에 빈틈도
+  // 생기지 않게 함(하나의 도형이라 경계 이음매 자체가 없음).
+  function setStretchArrow(svgId, lineId, headId, totalWidth) {
+    const svg = document.getElementById(svgId);
+    const line = document.getElementById(lineId);
+    const head = document.getElementById(headId);
+    if (!svg || !line || !head) return;
+
+    const HEAD_LEN = 10;
+    svg.setAttribute('viewBox', `0 0 ${totalWidth} 14`);
+    svg.style.width = totalWidth + 'px';
+
+    const shaftEnd = Math.max(0, totalWidth - HEAD_LEN);
+    line.setAttribute('x2', shaftEnd);
+    head.setAttribute('points', `${shaftEnd},2 ${totalWidth},7 ${shaftEnd},12`);
+  }
+
+  // 20"/28" 그룹의 SKG 10 -> Extraction Plant 화살표(fd20Arrow2/fd28Arrow2)를 늘려서,
+  // 두 그룹의 Extraction Plant 오른쪽 끝과 20" 그룹의 PHE Ogan Komering 줄(fd20LimauRow)
+  // 오른쪽 끝이 모두 같은 세로선에 맞춰지게 함. 셋 중 가장 오른쪽에 있는 것을 기준으로 삼고
+  // 나머지를 그만큼 늘림(오른쪽/양수 방향으로만 늘어나므로 음수 margin 오버플로와 무관해 안전).
+  // 그룹이 숨겨져 있으면 rect가 0이 되므로 그 값은 기준/대상에서 제외함.
+  function alignExtractionPlants() {
+    const arrow20 = document.getElementById('fd20Arrow2');
+    const arrow28 = document.getElementById('fd28Arrow2');
+    const end20 = document.getElementById('fd20End');
+    const end28 = document.getElementById('fd28End');
+    const limauRow = document.getElementById('fd20LimauRow');
+    if (!arrow20 || !arrow28 || !end20 || !end28) return;
+
+    const MIN = 40;
+    setStretchArrow('fd20Arrow2', 'fd20Arrow2Line', 'fd20Arrow2Head', MIN);
+    setStretchArrow('fd28Arrow2', 'fd28Arrow2Line', 'fd28Arrow2Head', MIN);
+
+    const rightOf = el => {
+      const r = el.getBoundingClientRect();
+      return (r.width === 0 && r.height === 0) ? null : r.right;
+    };
+
+    const r20 = rightOf(end20);
+    const r28 = rightOf(end28);
+    const rLimau = limauRow ? rightOf(limauRow) : null;
+    const candidates = [r20, r28, rLimau].filter(v => v !== null);
+    if (candidates.length === 0) return;
+    const target = Math.max(...candidates);
+
+    if (r20 !== null) setStretchArrow('fd20Arrow2', 'fd20Arrow2Line', 'fd20Arrow2Head', Math.max(MIN, MIN + (target - r20)));
+    if (r28 !== null) setStretchArrow('fd28Arrow2', 'fd28Arrow2Line', 'fd28Arrow2Head', Math.max(MIN, MIN + (target - r28)));
+  }
+
+  // #fdContent 안의 모든 박스(.fd-box)를 직접 재서, 가장 왼쪽 박스의 왼쪽 끝 ~ 가장 오른쪽
+  // 박스의 오른쪽 끝까지의 실제 범위를 구함. 그리드 트랙 경계를 넘어가는 오버플로우나 음수
+  // margin으로 삐져나온 부분은 scrollWidth에 안 잡힐 수 있어서, 박스 좌표를 직접 재는 게 더 정확함.
+  function computeFlowDiagramBounds() {
+    const content = document.getElementById('fdContent');
+    if (!content) return null;
+    const boxes = content.querySelectorAll('.fd-box');
+    let minLeft = Infinity, maxRight = -Infinity;
+    boxes.forEach(box => {
+      const r = box.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) return;
+      if (r.left < minLeft) minLeft = r.left;
+      if (r.right > maxRight) maxRight = r.right;
+    });
+    if (minLeft === Infinity) return null;
+    return { minLeft, maxRight };
+  }
+
+  // 전체 레이아웃: 폭은 20"/28" 토글 상태와 무관하게 "두 그룹 모두 표시된" 기준으로 고정하고
+  // (.fd-grid에 width:max-content가 있어서 이렇게 폭을 넓게 고정해도 각 그룹 내부 박스 배치는
+  // 서로 영향을 안 받음), 높이는 실제로 보이는 그룹 기준으로 자연스럽게 계산(그룹이 꺼지면
+  // 그만큼 짧아짐). 마지막으로 팝업이 쓸 수 있는 폭보다 넓으면 scale()로 축소.
+  // alignExtractionPlants()도 반드시 "두 그룹 모두 보이는" 상태에서 실행해야 함 - 그렇지 않으면
+  // 한쪽 그룹이 꺼져 있을 때 그 그룹의 폭을 기준에서 놓쳐서, 다른 그룹의 화살표 길이(=폭)가
+  // 토글 상태에 따라 달라지는 문제가 생김.
+  function layoutFlowDiagram() {
+    const viewport = document.getElementById('fdViewport');
+    const content = document.getElementById('fdContent');
+    const popup = document.getElementById('flowDiagramPopup');
+    const group20 = document.getElementById('fdGroup20');
+    const group28 = document.getElementById('fdGroup28');
+    if (!viewport || !content || !popup) return;
+
+    content.style.transform = 'none';
+    content.style.paddingLeft = '0px';
+    viewport.style.width = '';
+    viewport.style.height = '';
+
+    if (popup.classList.contains('hidden')) return;
+
+    const wasHidden20 = group20 && group20.classList.contains('hidden');
+    const wasHidden28 = group28 && group28.classList.contains('hidden');
+    if (wasHidden20) group20.classList.remove('hidden');
+    if (wasHidden28) group28.classList.remove('hidden');
+
+    alignExtractionPlants();
+
+    const EDGE_MARGIN = 6;
+    const contentRect = content.getBoundingClientRect();
+    let bounds = computeFlowDiagramBounds();
+
+    // 어떤 박스가 #fdContent 왼쪽 경계보다 왼쪽으로 삐져나와 있으면(음수 margin 등), 그 삐져나온
+    // 만큼 padding-left로 흡수해서 실제 폭 계산/scrollWidth에 정확히 반영되게 함.
+    if (bounds && bounds.minLeft < contentRect.left) {
+      content.style.paddingLeft = (contentRect.left - bounds.minLeft + EDGE_MARGIN) + 'px';
+      bounds = computeFlowDiagramBounds();
+    }
+
+    const naturalW = bounds ? (bounds.maxRight - bounds.minLeft + EDGE_MARGIN) : content.scrollWidth;
+
+    // 폭 관련 측정/조정이 끝났으니 실제 토글 상태로 복구한 뒤 높이를 재서 꺼진 그룹만큼 짧아지게 함.
+    if (wasHidden20) group20.classList.add('hidden');
+    if (wasHidden28) group28.classList.add('hidden');
+    const naturalH = content.scrollHeight;
+
+    const popupStyle = getComputedStyle(popup);
+    const padL = parseFloat(popupStyle.paddingLeft) || 0;
+    const padR = parseFloat(popupStyle.paddingRight) || 0;
+    const maxAvail = window.innerWidth * 0.99 - padL - padR;
+
+    const scale = Math.min(1, maxAvail / naturalW);
+    viewport.style.width = (naturalW * scale) + 'px';
+    viewport.style.height = (naturalH * scale) + 'px';
+    if (scale < 1) {
+      content.style.transform = `scale(${scale})`;
+    }
+  }
+
+  window.addEventListener('resize', () => requestAnimationFrame(layoutFlowDiagram));
 
   function metersToKm(m) { return (m / 1000).toFixed(1); }
 
@@ -594,6 +803,7 @@
       if (el) el.classList.toggle('hidden', !visible);
     }
 
+    updateFlowDiagramVisibility();
     updateStationHighlights();
   }
 
@@ -741,6 +951,9 @@
 
     buildSidebar(totalDistanceM);
   };
+
+  // 페이지 로드 시 팝업이 기본으로 켜져 있으므로(모든 라인 토글 기본 on), 처음부터 폭에 맞게 축소
+  requestAnimationFrame(layoutFlowDiagram);
 </script>
 <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBKZ64N6aTmQLaU312nCqXeyrNa-lol2IQ&libraries=geometry,marker&callback=initMap"></script>
 </body>
