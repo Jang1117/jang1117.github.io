@@ -186,15 +186,21 @@
   const PIPE_SEGMENTS = [
     { from: 'TEP', to: 'Musi Barat', diameter: '28"', color: '#3b82f6' },
     { from: 'Musi Barat', to: 'KSO IHE', diameter: '28"', color: '#3b82f6' },
-    { from: 'Musi Timur', to: 'Musi Barat', diameter: '6"', color: '#3b82f6' },
+    { from: 'Musi Timur', to: 'Musi Barat', diameter: '28"', color: '#3b82f6' },
     { from: 'Benuang SKG 18', to: 'SKG 10', diameter: '20"' },
     { from: 'Rambutan Medco', to: 'Betung', diameter: '20"' },
+    { from: 'Musi Timur', to: 'Teras Medco', diameter: '20"' },
+    { from: 'Teras Medco', to: 'Rambutan Medco', diameter: '20"' },
     { from: 'Teras Medco', to: 'Rambutan Medco', diameter: '16"' },
     { from: 'Musi Timur', to: 'Rambutan Medco', diameter: '16"' },
     { from: 'Rambutan Medco', to: 'Betung', diameter: '16"' },
     { from: 'Betung', to: 'Benuang SKG 18', diameter: '20"' },
-    // Rambutan Medco을 거치지 않는 직결 라인 (KSO IHE -> Benuang SKG 18 -> SKG 10 -> Extraction Plant), 구분을 위해 파란색
-    { from: 'KSO IHE', to: 'Benuang SKG 18', diameter: '28"', color: '#3b82f6' },
+    // Rambutan Medco/Teras Medco/Betung은 그냥 거쳐가는 통과 지점 (28인치 간선) - 그 지점의
+    // 다른 배관과 겹치지 않도록 살짝 떨어져서 그려짐(같은 두 지점 사이 라인이 여러 개일 때 자동 오프셋)
+    { from: 'KSO IHE', to: 'Teras Medco', diameter: '28"', color: '#3b82f6' },
+    { from: 'Teras Medco', to: 'Rambutan Medco', diameter: '28"', color: '#3b82f6' },
+    { from: 'Rambutan Medco', to: 'Betung', diameter: '28"', color: '#3b82f6' },
+    { from: 'Betung', to: 'Benuang SKG 18', diameter: '28"', color: '#3b82f6' },
     { from: 'Benuang SKG 18', to: 'SKG 10', diameter: '28"', color: '#3b82f6' },
     { from: 'SKG 10', to: 'Extraction Plant', diameter: '20"' },
     { from: 'SKG 10', to: 'Extraction Plant', diameter: '28"', color: '#3b82f6' },
