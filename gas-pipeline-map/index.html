@@ -70,18 +70,16 @@
     background: #0f172a; color: #e2e8f0; font-size: 12px; text-align: right;
   }
 
-  #sidebarToggle, #resetViewBtn, #flowDiagramBtn {
+  #sidebarToggle, #resetViewBtn {
     position: absolute; top: 14px; z-index: 11; width: 32px; height: 32px; border-radius: 8px;
     border: none; background: #1e293b; color: #e2e8f0; cursor: pointer; font-size: 14px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: left 0.2s;
   }
   #sidebarToggle { left: 314px; }
   #resetViewBtn { left: 354px; }
-  #flowDiagramBtn { left: 394px; }
   #app.collapsed #sidebar { transform: translateX(-300px); }
   #app.collapsed #sidebarToggle { left: 14px; }
   #app.collapsed #resetViewBtn { left: 54px; }
-  #app.collapsed #flowDiagramBtn { left: 94px; }
 
   /* ===== Flow diagram popup ===== */
   #flowDiagramPopup {
@@ -108,6 +106,10 @@
   .fd-arrow { color: #64748b; font-size: 14px; }
   .fd-arrow.up { font-size: 13px; }
   .fd-branch-row { display: flex; gap: 6px; align-items: center; }
+  .fd-longarrow-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .fd-longarrow-row { color: #64748b; font-size: 14px; letter-spacing: -1px; }
+  .fd-longarrow-branches { display: flex; gap: 26px; }
+  .fd-branch-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 
   /* ===== 마커 위 이름 라벨 (구글 InfoWindow 대신 커스텀 DOM 사용 - 빈 공간/닫기 버튼 없음, 항상 표시) ===== */
   .name-label {
@@ -147,10 +149,9 @@
 
   <button id="sidebarToggle" onclick="toggleSidebar()">☰</button>
   <button id="resetViewBtn" onclick="resetView()" title="처음 화면으로">⌂</button>
-  <button id="flowDiagramBtn" onclick="toggleFlowDiagram()" title="흐름도 보기">⛓</button>
 
   <div id="flowDiagramPopup" class="hidden">
-    <button class="fd-close" onclick="toggleFlowDiagram(false)">✕</button>
+    <button class="fd-close" onclick="closeFlowDiagram()">✕</button>
 
     <div class="fd-group">
       <div class="fd-group-title" style="color:#f97316">20" 그룹</div>
@@ -177,27 +178,28 @@
 
     <div class="fd-group">
       <div class="fd-group-title" style="color:#3b82f6">28" 그룹</div>
-      <div class="fd-grid" style="grid-template-columns: repeat(9, auto);">
+      <div class="fd-grid" style="grid-template-columns: repeat(9, auto); grid-template-rows: auto;">
         <div class="fd-box" style="border-color:#3b82f6">Musi Timur</div>
         <div class="fd-arrow">→</div>
         <div class="fd-box" style="border-color:#3b82f6">Musi Barat</div>
-        <div class="fd-arrow" style="justify-self: stretch; text-align:center;">⟶⟶⟶</div>
+        <div class="fd-longarrow-wrap">
+          <div class="fd-longarrow-row">⟶⟶⟶⟶⟶⟶⟶⟶</div>
+          <div class="fd-longarrow-branches">
+            <div class="fd-branch-col">
+              <div class="fd-arrow up">↑</div>
+              <div class="fd-box sub" style="border-color:#3b82f6">TEP</div>
+            </div>
+            <div class="fd-branch-col">
+              <div class="fd-arrow up">↑</div>
+              <div class="fd-box sub" style="border-color:#3b82f6">KSO IHE</div>
+            </div>
+          </div>
+        </div>
         <div class="fd-box" style="border-color:#3b82f6">Benuang SKG 18</div>
         <div class="fd-arrow">→</div>
         <div class="fd-box" style="border-color:#3b82f6">SKG 10</div>
         <div class="fd-arrow">→</div>
         <div class="fd-box" style="border-color:#3b82f6">Extraction Plant</div>
-
-        <div></div><div></div><div></div>
-        <div class="fd-arrow up">↑</div>
-        <div></div><div></div><div></div><div></div><div></div>
-
-        <div></div><div></div><div></div>
-        <div class="fd-branch-row">
-          <div class="fd-box sub" style="border-color:#3b82f6">TEP</div>
-          <div class="fd-box sub" style="border-color:#3b82f6">KSO IHE</div>
-        </div>
-        <div></div><div></div><div></div><div></div><div></div>
       </div>
     </div>
   </div>
@@ -207,6 +209,13 @@
       <h1>🛢️ Gas Pipeline Map</h1>
       <div class="subtitle">Sumatra pipeline route · 8 stations</div>
     </header>
+    <div class="toggle-row">
+      <span>그룹 플로우 표시</span>
+      <label class="switch">
+        <input type="checkbox" id="flowDiagramToggle" onchange="toggleFlowDiagram(this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
     <div class="toggle-row">
       <span>지도 라벨 표시</span>
       <label class="switch">
@@ -433,6 +442,13 @@
     const popup = document.getElementById('flowDiagramPopup');
     const show = typeof force === 'boolean' ? force : popup.classList.contains('hidden');
     popup.classList.toggle('hidden', !show);
+    const toggleInput = document.getElementById('flowDiagramToggle');
+    if (toggleInput) toggleInput.checked = show;
+  }
+
+  // 팝업 안의 닫기(X) 버튼: 사이드바 스위치도 같이 꺼서 상태를 맞춰줌
+  function closeFlowDiagram() {
+    toggleFlowDiagram(false);
   }
 
   function metersToKm(m) { return (m / 1000).toFixed(1); }
