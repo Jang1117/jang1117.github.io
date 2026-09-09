@@ -170,6 +170,7 @@
     { name: 'TEP',               lat: -3.132468835999215, lng: 103.0830930847289 },
     { name: 'Musi Barat',        lat: -3.228865209344153, lng: 103.16618157123695, image: 'images/musi-barat.jpg' },
     { name: 'Musi Timur',        lat: -3.2368675649612086, lng: 103.21694438730322 },
+    { name: 'KSO IHE',           lat: -3.2751955301760565, lng: 103.27718749623448 },
     { name: 'Teras Medco',       lat: -3.439449544771804, lng: 103.48364977493627 },
     { name: 'Rambutan Medco',          lat: -3.43948851339328,  lng: 103.69965617653203 },
     { name: 'Betung',            lat: -3.4069310481411623, lng: 103.88196055783322 },
@@ -184,6 +185,8 @@
   // 실제 배관 연결 구간 (순서가 아니라 실제로 파이프가 연결된 구간만 정의).
   const PIPE_SEGMENTS = [
     { from: 'TEP', to: 'Musi Barat', diameter: '28"', color: '#3b82f6' },
+    { from: 'Musi Barat', to: 'KSO IHE', diameter: '28"', color: '#3b82f6' },
+    { from: 'KSO IHE', to: 'Teras Medco', diameter: '28"', color: '#3b82f6' },
     { from: 'Musi Timur', to: 'Musi Barat', diameter: '6"', color: '#3b82f6' },
     { from: 'Benuang SKG 18', to: 'SKG 10', diameter: '20"' },
     { from: 'Rambutan Medco', to: 'Betung', diameter: '20"' },
