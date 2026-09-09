@@ -268,16 +268,16 @@
       </label>
     </div>
     <div class="toggle-row">
-      <span>NLG 라인 표시</span>
+      <span>NGL 라인 표시</span>
       <label class="switch">
-        <input type="checkbox" id="nlgLineToggle" checked onchange="toggleGroup('nlg', this.checked)">
+        <input type="checkbox" id="nglLineToggle" checked onchange="toggleGroup('ngl', this.checked)">
         <span class="slider"></span>
       </label>
     </div>
     <div id="legend">
       <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span>20" 그룹</div>
       <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>28" 라인</div>
-      <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>NLG 라인</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>NGL 라인</div>
       <div class="legend-item"><span class="legend-dot" style="background:#a855f7"></span>20", 28" 라인 둘다 지나감</div>
     </div>
     <div class="toggle-row">
@@ -328,7 +328,7 @@
     { from: 'Benuang SKG 18', to: 'SKG 10', diameter: '28"', color: '#3b82f6' },
     { from: 'SKG 10', to: 'Extraction Plant', diameter: '20"' },
     { from: 'SKG 10', to: 'Extraction Plant', diameter: '28"', color: '#3b82f6' },
-    { from: 'Extraction Plant', to: 'Fractionation Plant', diameter: '8"', color: '#22c55e', group: 'nlg' }, // NLG 라인 - 별도 그룹
+    { from: 'Extraction Plant', to: 'Fractionation Plant', diameter: '8"', color: '#22c55e', group: 'ngl' }, // NGL 라인 - 별도 그룹
     // PHE Ogan Komering 자체 8인치 연결은 아직 보류 (엔드포인트 미정)
     { from: 'SKG 10', to: 'Limau Timur', diameter: '12"', color: '#3b82f6', group: '28' }, // 실제 12인치, 28인치 그룹으로 분류
     { from: 'Limau Timur', to: 'PHE Ogan Komering', diameter: '10"', color: '#3b82f6', group: '28' } // 실제 10인치, 28인치 그룹으로 분류
@@ -338,9 +338,9 @@
     return STATIONS.find(s => s.name === name);
   }
 
-  // 각 그룹('main'/'28'/'nlg')에 속한 스테이션 이름 목록 계산
+  // 각 그룹('main'/'28'/'ngl')에 속한 스테이션 이름 목록 계산
   function computeGroupStationSets() {
-    const sets = { main: new Set(), '28': new Set(), nlg: new Set() };
+    const sets = { main: new Set(), '28': new Set(), ngl: new Set() };
     PIPE_SEGMENTS.forEach(seg => {
       const g = computeSegmentGroup(seg);
       if (!sets[g]) sets[g] = new Set();
@@ -350,20 +350,26 @@
     return sets;
   }
 
-  // 라인 표시 토글 중 딱 하나만 켜져 있을 때만, 그 그룹에 속한 지점의 마커 이름표를
-  // 노란색으로 강조해서 지도에서 바로 찾기 쉽게 함. 여러 개(또는 0개) 켜져 있으면 기본(흰색).
+  // 28" 트렁크가 지나가긴 하지만 흐름도의 28" 그룹에는 나오지 않는 통과 지점(20" 그룹 소속) -
+  // 28" 강조에서는 제외
+  const LINE28_PASS_THROUGH_STATIONS = new Set(['Teras Medco', 'Rambutan Medco', 'Betung']);
+
+  // "20\" 라인 표시"/"28\" 라인 표시" 중 딱 하나만 켜져 있을 때만, 그 그룹에 속한 지점의
+  // 마커 이름표를 노란색으로 강조. NGL 토글은 이 판단에서 제외됨(켜져 있어도 무시).
+  // 여러 개(또는 0개) 켜져 있으면 기본(흰색).
   function updateStationHighlights() {
     const mainOn = document.getElementById('mainLineToggle')?.checked;
     const line28On = document.getElementById('line28Toggle')?.checked;
-    const nlgOn = document.getElementById('nlgLineToggle')?.checked;
-    const onCount = [mainOn, line28On, nlgOn].filter(Boolean).length;
+    const onCount = [mainOn, line28On].filter(Boolean).length;
 
     let highlightSet = new Set();
     if (onCount === 1) {
       const groupSets = computeGroupStationSets();
-      if (mainOn) highlightSet = groupSets.main;
-      else if (line28On) highlightSet = groupSets['28'];
-      else if (nlgOn) highlightSet = groupSets.nlg;
+      if (mainOn) {
+        highlightSet = groupSets.main;
+      } else {
+        highlightSet = new Set([...groupSets['28']].filter(n => !LINE28_PASS_THROUGH_STATIONS.has(n)));
+      }
     }
 
     STATIONS.forEach((s, i) => {
@@ -372,7 +378,7 @@
     });
   }
 
-  // 라인/라벨 표시 토글에 쓰이는 그룹 키: 'main'(20인치 등 기본망) / '28' / 'nlg' 등 seg.group으로 명시 가능
+  // 라인/라벨 표시 토글에 쓰이는 그룹 키: 'main'(20인치 등 기본망) / '28' / 'ngl' 등 seg.group으로 명시 가능
   function computeSegmentGroup(seg) {
     if (seg.group) return seg.group;
     return seg.diameter === '28"' ? '28' : 'main';
@@ -577,7 +583,7 @@
     distanceLabels.forEach(l => { l.map = visible ? map : null; });
   }
 
-  // 그룹('main' / '28' / 'nlg')별로 라인/라벨을 켜고 끔. 흐름도 팝업의 해당 그룹 섹션도 같이 켜고 끔.
+  // 그룹('main' / '28' / 'ngl')별로 라인/라벨을 켜고 끔. 흐름도 팝업의 해당 그룹 섹션도 같이 켜고 끔.
   function toggleGroup(group, visible) {
     pipelineLines.forEach(l => { if (l.__group === group) l.setMap(visible ? map : null); });
     distanceLabels.forEach(l => { if (l.__group === group) l.map = visible ? map : null; });
