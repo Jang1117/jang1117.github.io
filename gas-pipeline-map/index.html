@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gas Pipeline Map</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', -apple-system, sans-serif; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  #app { position: relative; width: 100%; height: 100%; }
+  #map { position: absolute; inset: 0; }
+
+  /* ===== Sidebar ===== */
+  #sidebar {
+    position: absolute; top: 0; left: 0; bottom: 0; width: 300px; z-index: 10;
+    background: rgba(15, 23, 42, 0.92); color: #e2e8f0; display: flex; flex-direction: column;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.35);
+  }
+  #sidebar header {
+    padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.12);
+  }
+  #sidebar h1 { font-size: 16px; font-weight: 700; }
+  #sidebar .subtitle { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px; border-bottom: 1px solid rgba(255,255,255,0.12); font-size: 12px;
+  }
+  .switch { position: relative; display: inline-block; width: 36px; height: 20px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider {
+    position: absolute; inset: 0; background: #475569; border-radius: 999px; cursor: pointer; transition: 0.15s;
+  }
+  .switch .slider::before {
+    content: ''; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px;
+    background: #e2e8f0; border-radius: 50%; transition: 0.15s;
+  }
+  .switch input:checked + .slider { background: #3b82f6; }
+  .switch input:checked + .slider::before { transform: translateX(16px); }
+
+  #stationList { flex: 1; overflow-y: auto; padding: 8px; }
+  .station-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .station-item:hover { background: rgba(255,255,255,0.08); }
+  .station-item.active { background: rgba(59,130,246,0.25); }
+  .station-badge {
+    flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: #f97316;
+    color: #0f172a; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+  .station-info .name { font-size: 13px; font-weight: 600; }
+  .station-info .coords { font-size: 10px; color: #94a3b8; font-family: 'JetBrains Mono', monospace; }
+
+  #summary {
+    padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 12px; color: #cbd5e1;
+  }
+  #summary .row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  #summary .row span:last-child { font-weight: 700; color: #38bdf8; }
+
+  #legend {
+    display: flex; gap: 12px; flex-wrap: wrap; padding: 10px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.12); font-size: 11px; color: #cbd5e1;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+  #sidebarToggle, #resetViewBtn {
+    position: absolute; top: 14px; z-index: 11; width: 32px; height: 32px; border-radius: 8px;
+    border: none; background: #1e293b; color: #e2e8f0; cursor: pointer; font-size: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: left 0.2s;
+  }
+  #sidebarToggle { left: 314px; }
+  #resetViewBtn { left: 354px; }
+  #app.collapsed #sidebar { transform: translateX(-300px); }
+  #app.collapsed #sidebarToggle { left: 14px; }
+  #app.collapsed #resetViewBtn { left: 54px; }
+
+  /* ===== 마커 위 이름 라벨 (구글 InfoWindow 대신 커스텀 DOM 사용 - 빈 공간/닫기 버튼 없음, 항상 표시) ===== */
+  .name-label {
+    position: relative;
+    transform: translateY(-46px);
+    padding: 5px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #cbd5e1;
+    color: #1e293b; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
+  .name-label::after {
+    content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -5px;
+    border: 5px solid transparent; border-top-color: #ffffff;
+  }
+
+  /* ===== Custom marker pins (AdvancedMarkerElement content) ===== */
+  .map-pin {
+    width: 30px; height: 30px; border-radius: 50%; background: #f97316; border: 2px solid #0f172a;
+    color: #0f172a; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor: pointer;
+  }
+  .map-pin-image {
+    width: 56px; height: 56px; border-radius: 50%; border: 3px solid #fff; overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.5); cursor: pointer; background: #1e293b;
+  }
+  .map-pin-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* 구간별 거리 라벨 (파이프라인 각 연결선 중간에 표시) */
+  .distance-label {
+    padding: 3px 8px; border-radius: 999px; background: rgba(15,23,42,0.85); border: 1px solid #f97316;
+    color: #f97316; font-size: 11px; font-weight: 700; white-space: nowrap; pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map"></div>
+
+  <button id="sidebarToggle" onclick="toggleSidebar()">☰</button>
+  <button id="resetViewBtn" onclick="resetView()" title="처음 화면으로">⌂</button>
+
+  <div id="sidebar">
+    <header>
+      <h1>🛢️ Gas Pipeline Map</h1>
+      <div class="subtitle">Sumatra pipeline route · 8 stations</div>
+    </header>
+    <div class="toggle-row">
+      <span>지도 라벨 표시</span>
+      <label class="switch">
+        <input type="checkbox" onchange="toggleMapLabels(this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span>포인트 마커 표시</span>
+      <label class="switch">
+        <input type="checkbox" checked onchange="toggleMarkers(this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span>연결선 표시</span>
+      <label class="switch">
+        <input type="checkbox" checked onchange="togglePipeline(this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span>20" 라인 표시</span>
+      <label class="switch">
+        <input type="checkbox" checked onchange="toggleMainNetwork(this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span>28" 라인 표시</span>
+      <label class="switch">
+        <input type="checkbox" checked onchange="toggleDiameter('28&quot;', this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div id="legend">
+      <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span>20" 그룹</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>28" 라인</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#a855f7"></span>둘 다 지나감</div>
+    </div>
+    <div id="stationList"></div>
+    <div id="summary"></div>
+  </div>
+</div>
+
+<script>
+  const STATIONS = [
+    { name: 'Musi Barat',        lat: -3.228865209344153, lng: 103.16618157123695, image: 'images/musi-barat.jpg' },
+    { name: 'Musi Timur',        lat: -3.2368675649612086, lng: 103.21694438730322 },
+    { name: 'Rambutan Medco',          lat: -3.43948851339328,  lng: 103.69965617653203 },
+    { name: 'Betung',            lat: -3.4069310481411623, lng: 103.88196055783322 },
+    { name: 'Benuang SKG 18',    lat: -3.375057936390541, lng: 104.03782907862875 },
+    { name: 'SKG 10',            lat: -3.434208709149742, lng: 104.21775166872 },
+    { name: 'Extraction Plant',  lat: -3.432045373646473, lng: 104.21977405426833 },
+    { name: 'Fractionation Plant', lat: -2.9929461073930828, lng: 104.85092465739524 }
+  ];
+
+  const DEFAULT_PIPE_COLOR = '#f97316';
+
+  // 실제 배관 연결 구간 (순서가 아니라 실제로 파이프가 연결된 구간만 정의).
+  const PIPE_SEGMENTS = [
+    { from: 'Musi Timur', to: 'Musi Barat', diameter: '6"', color: '#3b82f6' },
+    { from: 'Benuang SKG 18', to: 'SKG 10', diameter: '20"' },
+    { from: 'Rambutan Medco', to: 'Betung', diameter: '20"' },
+    // Rambutan Medco을 거치지 않는 직결 라인 (Musi Barat -> Benuang SKG 18 -> SKG 10 -> Extraction Plant), 구분을 위해 파란색
+    { from: 'Musi Barat', to: 'Benuang SKG 18', diameter: '28"', color: '#3b82f6' },
+    { from: 'Benuang SKG 18', to: 'SKG 10', diameter: '28"', color: '#3b82f6' },
+    { from: 'SKG 10', to: 'Extraction Plant', diameter: '20"' },
+    { from: 'SKG 10', to: 'Extraction Plant', diameter: '28"', color: '#3b82f6' },
+    { from: 'Extraction Plant', to: 'Fractionation Plant', diameter: '8"' }
+  ];
+
+  function findStation(name) {
+    return STATIONS.find(s => s.name === name);
+  }
+
+  const LINE28_COLOR = '#3b82f6';   // 28인치 라인 색상
+  const BOTH_LINES_COLOR = '#a855f7'; // 20인치 그룹과 28인치 라인을 모두 지나가는 지점
+
+  // 각 스테이션이 "20인치 그룹(28인치 제외 전부)"에 속하는지, "28인치 라인"에 속하는지 계산해서
+  // 마커 색상을 정함: 둘 다 지나가면 보라, 28인치만이면 파랑, 그 외(20인치 그룹만)는 기본 주황.
+  function computeStationColors() {
+    const hasMain = {}, has28 = {};
+    PIPE_SEGMENTS.forEach(seg => {
+      const bucket = seg.diameter === '28"' ? has28 : hasMain;
+      bucket[seg.from] = true;
+      bucket[seg.to] = true;
+    });
+    const colors = {};
+    STATIONS.forEach(s => {
+      if (hasMain[s.name] && has28[s.name]) colors[s.name] = BOTH_LINES_COLOR;
+      else if (has28[s.name]) colors[s.name] = LINE28_COLOR;
+      else colors[s.name] = DEFAULT_PIPE_COLOR;
+    });
+    return colors;
+  }
+
+  const PARALLEL_OFFSET_M = 300; // 같은 두 지점을 잇는 라인이 여러 개일 때 벌려서 그리는 정도(미터)
+
+  // 같은 두 지점을 연결하는 구간이 여러 개(예: 20인치 + 28인치)면 겹쳐 보이지 않도록
+  // 서로 반대 방향으로 살짝 벌어지게 할 오프셋(미터)을 구간별로 계산.
+  function computeSegmentOffsets() {
+    const groups = {};
+    PIPE_SEGMENTS.forEach(seg => {
+      const key = [seg.from, seg.to].sort().join('|');
+      (groups[key] = groups[key] || []).push(seg);
+    });
+    const offsets = new Map();
+    Object.values(groups).forEach(group => {
+      const n = group.length;
+      const sortedNames = [group[0].from, group[0].to].sort();
+      group.forEach((seg, idx) => {
+        if (n <= 1) { offsets.set(seg, 0); return; }
+        const base = (idx - (n - 1) / 2) * PARALLEL_OFFSET_M;
+        // 구간이 정렬 기준과 반대 방향(from/to가 뒤집힘)으로 정의돼 있으면 부호를 뒤집어
+        // 그룹 내에서 오프셋 방향이 일관되게 유지되도록 함
+        offsets.set(seg, seg.from === sortedNames[0] ? base : -base);
+      });
+    });
+    return offsets;
+  }
+
+  // 두 지점을 잇는 선을 진행 방향에 수직으로 offsetMeters만큼 밀어낸 좌표쌍을 반환
+  function computeParallelPositions(posA, posB, offsetMeters) {
+    if (!offsetMeters) return { a: posA, b: posB };
+    try {
+      const llA = new google.maps.LatLng(posA.lat, posA.lng);
+      const llB = new google.maps.LatLng(posB.lat, posB.lng);
+      const perpHeading = google.maps.geometry.spherical.computeHeading(llA, llB) + 90;
+      const offA = google.maps.geometry.spherical.computeOffset(llA, offsetMeters, perpHeading);
+      const offB = google.maps.geometry.spherical.computeOffset(llB, offsetMeters, perpHeading);
+      return { a: { lat: offA.lat(), lng: offA.lng() }, b: { lat: offB.lat(), lng: offB.lng() } };
+    } catch (e) {
+      console.warn('parallel offset failed:', e);
+      return { a: posA, b: posB };
+    }
+  }
+
+  let map, markers = [], pipelineLines = [], distanceLabels = [], nameLabels = [];
+  let markersVisible = true;
+  let stationColors = {};
+  let labelsOn = false; // 구글 지도 기본 라벨(지명/도로명) 표시 여부
+
+  // 위성 지도에서 구글 기본 라벨을 보이게 하려면 'hybrid', 안 보이게 하려면 'satellite'
+  function applyMapType() {
+    if (map) map.setMapTypeId(labelsOn ? 'hybrid' : 'satellite');
+  }
+
+  function toggleMapLabels(visible) {
+    labelsOn = visible;
+    applyMapType();
+  }
+
+  function computeAllBounds() {
+    const bounds = new google.maps.LatLngBounds();
+    STATIONS.forEach(s => bounds.extend({ lat: s.lat, lng: s.lng }));
+    return bounds;
+  }
+
+  // 왼쪽 사이드바(300px)에 포인트가 가려지지 않도록 fitBounds 여백을 그만큼 더 줌
+  function getFitBoundsPadding() {
+    const collapsed = document.getElementById('app').classList.contains('collapsed');
+    return { top: 60, right: 60, bottom: 60, left: collapsed ? 60 : 340 };
+  }
+
+  function resetView() {
+    applyMapType();
+    map.fitBounds(computeAllBounds(), getFitBoundsPadding());
+  }
+
+  function toggleSidebar() {
+    document.getElementById('app').classList.toggle('collapsed');
+    setTimeout(() => { if (map) google.maps.event.trigger(map, 'resize'); }, 210);
+  }
+
+  function metersToKm(m) { return (m / 1000).toFixed(1); }
+
+  function buildSidebar(totalDistanceM) {
+    const list = document.getElementById('stationList');
+    list.innerHTML = '';
+    STATIONS.forEach((s, i) => {
+      const item = document.createElement('div');
+      item.className = 'station-item';
+      item.dataset.index = i;
+      item.innerHTML = `
+        <div class="station-badge" style="background:${stationColors[s.name] || '#f97316'}">${i + 1}</div>
+        <div class="station-info">
+          <div class="name">${s.name}</div>
+          <div class="coords">${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}</div>
+        </div>
+      `;
+      item.addEventListener('click', () => selectStation(i));
+      list.appendChild(item);
+    });
+
+    const summary = document.getElementById('summary');
+    summary.innerHTML = `
+      <div class="row"><span>스테이션 수</span><span>${STATIONS.length}</span></div>
+      <div class="row"><span>총 파이프라인 길이(직선)</span><span>${metersToKm(totalDistanceM)} km</span></div>
+    `;
+  }
+
+  // 위성 뷰로 바꾸고 확대해서 크게 보여줌. 이름 라벨은 항상 떠 있으므로 여기선 이동만 함
+  function selectStation(i) {
+    document.querySelectorAll('.station-item').forEach(el => el.classList.remove('active'));
+    const item = document.querySelector(`.station-item[data-index="${i}"]`);
+    if (item) item.classList.add('active');
+
+    const s = STATIONS[i];
+    applyMapType();
+    map.panTo({ lat: s.lat, lng: s.lng });
+    map.setZoom(18);
+  }
+
+  function toggleMarkers(visible) {
+    markersVisible = visible;
+    markers.forEach(m => { m.map = visible ? map : null; });
+    nameLabels.forEach(l => { l.map = visible ? map : null; });
+  }
+
+  function togglePipeline(visible) {
+    pipelineLines.forEach(l => l.setMap(visible ? map : null));
+    distanceLabels.forEach(l => { l.map = visible ? map : null; });
+  }
+
+  // 특정 관경(예: '28"')의 라인/라벨만 켜고 끔
+  function toggleDiameter(diameter, visible) {
+    pipelineLines.forEach(l => { if (l.__diameter === diameter) l.setMap(visible ? map : null); });
+    distanceLabels.forEach(l => { if (l.__diameter === diameter) l.map = visible ? map : null; });
+  }
+
+  // "20인치 라인" 버튼: 28인치(직결 라인)를 제외한 나머지 배관망 전체를 켜고 끔
+  function toggleMainNetwork(visible) {
+    pipelineLines.forEach(l => { if (l.__diameter !== '28"') l.setMap(visible ? map : null); });
+    distanceLabels.forEach(l => { if (l.__diameter !== '28"') l.map = visible ? map : null; });
+  }
+
+  // 이미지 마커 로드 실패 시 번호 배지로 대체
+  function handleMarkerImgError(imgEl, num, color) {
+    const wrap = imgEl.closest('.map-pin-image');
+    if (!wrap) return;
+    wrap.classList.remove('map-pin-image');
+    wrap.classList.add('map-pin');
+    wrap.style.background = color;
+    wrap.innerHTML = num;
+  }
+
+  window.initMap = function () {
+    const bounds = new google.maps.LatLngBounds();
+    STATIONS.forEach(s => bounds.extend({ lat: s.lat, lng: s.lng }));
+
+    map = new google.maps.Map(document.getElementById('map'), {
+      center: bounds.getCenter(),
+      zoom: 8,
+      mapId: 'DEMO_MAP_ID', // AdvancedMarkerElement(커스텀 핀) 사용에 필요
+      mapTypeId: 'satellite',
+      mapTypeControl: true,
+      streetViewControl: false,
+      fullscreenControl: true
+    });
+
+    // Musi Barat 중심 28km 반경 원
+    const musiBarat = findStation('Musi Barat');
+    if (musiBarat) {
+      new google.maps.Circle({
+        center: { lat: musiBarat.lat, lng: musiBarat.lng },
+        radius: 28000, // meters
+        map,
+        strokeColor: '#f97316',
+        strokeOpacity: 0.9,
+        strokeWeight: 2,
+        fillColor: '#f97316',
+        fillOpacity: 0.08,
+        clickable: false
+      });
+    }
+
+    // 마커 (Musi Barat은 실제 현장 사진, 나머지는 번호 배지 - AdvancedMarkerElement로 커스텀 HTML 사용)
+    // 색상으로 20인치 그룹 / 28인치 라인 / 둘 다 지나가는 지점을 구분함
+    stationColors = computeStationColors();
+    STATIONS.forEach((s, i) => {
+      const pinColor = stationColors[s.name];
+      const pin = document.createElement('div');
+      if (s.image) {
+        pin.className = 'map-pin-image';
+        pin.style.borderColor = pinColor;
+        pin.innerHTML = `<img src="${s.image}" alt="${s.name}" onerror="handleMarkerImgError(this, ${i + 1}, '${pinColor}')">`;
+      } else {
+        pin.className = 'map-pin';
+        pin.style.background = pinColor;
+        pin.textContent = String(i + 1);
+      }
+
+      const marker = new google.maps.marker.AdvancedMarkerElement({
+        position: { lat: s.lat, lng: s.lng },
+        map,
+        content: pin,
+        title: s.name,
+        collisionBehavior: google.maps.CollisionBehavior.REQUIRED
+      });
+      marker.addListener('click', () => selectStation(i));
+      markers.push(marker);
+
+      // 이름 라벨은 항상 마커 위에 떠 있음 (줌 레벨과 무관). 라벨 클릭도 마커 클릭과 동일하게 동작
+      const nameEl = document.createElement('div');
+      nameEl.className = 'name-label';
+      nameEl.textContent = s.name;
+      const nameLabel = new google.maps.marker.AdvancedMarkerElement({
+        position: { lat: s.lat, lng: s.lng },
+        map,
+        content: nameEl,
+        zIndex: 999,
+        collisionBehavior: google.maps.CollisionBehavior.REQUIRED
+      });
+      nameLabel.addListener('click', () => selectStation(i));
+      nameLabels.push(nameLabel);
+    });
+
+    map.fitBounds(bounds, getFitBoundsPadding());
+
+    // 실제 배관 구간(PIPE_SEGMENTS)마다 점선 + "거리 · 관경" 라벨을 그림.
+    // 같은 두 지점을 잇는 구간이 여러 개면(예: 20"+28") 서로 겹치지 않게 살짝 벌려서 그림.
+    // 구간 하나의 계산/렌더링이 실패해도 나머지 구간은 정상적으로 뜨도록 각각 독립 처리.
+    const segmentOffsets = computeSegmentOffsets();
+    let totalDistanceM = 0;
+    PIPE_SEGMENTS.forEach(seg => {
+      const A = findStation(seg.from), B = findStation(seg.to);
+      if (!A || !B) { console.warn('알 수 없는 스테이션 이름:', seg); return; }
+
+      const posA = { lat: A.lat, lng: A.lng };
+      const posB = { lat: B.lat, lng: B.lng };
+      const color = seg.color || DEFAULT_PIPE_COLOR;
+      const offsetM = segmentOffsets.get(seg) || 0;
+      const { a: drawA, b: drawB } = computeParallelPositions(posA, posB, offsetM);
+
+      const line = new google.maps.Polyline({
+        path: [drawA, drawB],
+        geodesic: true,
+        strokeColor: color,
+        strokeOpacity: 0,
+        icons: [{
+          icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },
+          offset: '0',
+          repeat: '16px'
+        }],
+        map
+      });
+      line.__diameter = seg.diameter;
+      pipelineLines.push(line);
+
+      // 거리는 실제 두 지점 사이(오프셋 적용 전) 값으로 계산
+      let segM = 0;
+      try {
+        segM = google.maps.geometry.spherical.computeDistanceBetween(
+          new google.maps.LatLng(A.lat, A.lng), new google.maps.LatLng(B.lat, B.lng)
+        );
+        totalDistanceM += segM;
+      } catch (e) {
+        console.warn(`distance calc failed for ${seg.from} -> ${seg.to}:`, e);
+      }
+
+      const label = document.createElement('div');
+      label.className = 'distance-label';
+      label.style.borderColor = color;
+      label.style.color = color;
+      label.textContent = `${metersToKm(segM)} km · ${seg.diameter}`;
+
+      const labelMarker = new google.maps.marker.AdvancedMarkerElement({
+        position: { lat: (drawA.lat + drawB.lat) / 2, lng: (drawA.lng + drawB.lng) / 2 },
+        map,
+        content: label,
+        title: `${seg.from} → ${seg.to} (${seg.diameter})`,
+        collisionBehavior: google.maps.CollisionBehavior.REQUIRED
+      });
+      labelMarker.__diameter = seg.diameter;
+      distanceLabels.push(labelMarker);
+    });
+
+    buildSidebar(totalDistanceM);
+  };
+</script>
+<script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBKZ64N6aTmQLaU312nCqXeyrNa-lol2IQ&libraries=geometry,marker&callback=initMap"></script>
+</body>
+</html>
