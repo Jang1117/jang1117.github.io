@@ -102,12 +102,12 @@
     padding: 6px 10px; border-radius: 7px; border: 1.5px solid; font-size: 11px; font-weight: 700;
     white-space: nowrap; background: rgba(255,255,255,0.05);
   }
-  .fd-box.sub { font-size: 10px; padding: 4px 8px; font-weight: 600; opacity: 0.9; }
+  .fd-box.sub { padding: 4px 8px; font-weight: 600; opacity: 0.9; }
   .fd-arrow { color: #64748b; font-size: 14px; }
   .fd-arrow.up { font-size: 13px; }
   .fd-branch-row { display: flex; gap: 6px; align-items: center; }
-  .fd-longarrow-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-  .fd-longarrow-row { color: #64748b; font-size: 14px; letter-spacing: -1px; }
+  .fd-longarrow-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .fd-longarrow-svg { width: 170px; height: 14px; display: block; }
   .fd-longarrow-branches { display: flex; gap: 26px; }
   .fd-branch-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 
@@ -150,7 +150,7 @@
   <button id="sidebarToggle" onclick="toggleSidebar()">☰</button>
   <button id="resetViewBtn" onclick="resetView()" title="처음 화면으로">⌂</button>
 
-  <div id="flowDiagramPopup" class="hidden">
+  <div id="flowDiagramPopup">
     <button class="fd-close" onclick="closeFlowDiagram()">✕</button>
 
     <div class="fd-group">
@@ -183,7 +183,10 @@
         <div class="fd-arrow">→</div>
         <div class="fd-box" style="border-color:#3b82f6">Musi Barat</div>
         <div class="fd-longarrow-wrap">
-          <div class="fd-longarrow-row">⟶⟶⟶⟶⟶⟶⟶⟶</div>
+          <svg class="fd-longarrow-svg" viewBox="0 0 170 14" preserveAspectRatio="none">
+            <line x1="2" y1="7" x2="158" y2="7" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <polygon points="158,2 168,7 158,12" fill="#64748b"/>
+          </svg>
           <div class="fd-longarrow-branches">
             <div class="fd-branch-col">
               <div class="fd-arrow up">↑</div>
@@ -210,16 +213,16 @@
       <div class="subtitle">Sumatra pipeline route · 8 stations</div>
     </header>
     <div class="toggle-row">
-      <span>그룹 플로우 표시</span>
+      <span>지도 라벨 표시</span>
       <label class="switch">
-        <input type="checkbox" id="flowDiagramToggle" onchange="toggleFlowDiagram(this.checked)">
+        <input type="checkbox" onchange="toggleMapLabels(this.checked)">
         <span class="slider"></span>
       </label>
     </div>
     <div class="toggle-row">
-      <span>지도 라벨 표시</span>
+      <span>그룹 플로우 표시</span>
       <label class="switch">
-        <input type="checkbox" onchange="toggleMapLabels(this.checked)">
+        <input type="checkbox" id="flowDiagramToggle" checked onchange="toggleFlowDiagram(this.checked)">
         <span class="slider"></span>
       </label>
     </div>
