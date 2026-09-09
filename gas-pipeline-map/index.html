@@ -105,9 +105,10 @@
   .fd-box.sub { padding: 4px 8px; font-weight: 600; opacity: 0.9; }
   .fd-arrow { color: #64748b; font-size: 14px; }
   .fd-arrow.up { font-size: 13px; }
-  .fd-branch-row { display: flex; gap: 6px; align-items: center; }
   .fd-longarrow-svg { width: 170px; height: 14px; display: block; }
-  .fd-longarrow-branches { display: flex; gap: 26px; }
+  /* 화살표를 자기 박스 바로 위(가로 중앙)에 붙이기 위해 화살표+박스를 하나의 세로 묶음으로 짝지음 */
+  .fd-branch-group { display: flex; gap: 26px; }
+  .fd-branch-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 
   /* ===== 마커 위 이름 라벨 (구글 InfoWindow 대신 커스텀 DOM 사용 - 빈 공간/닫기 버튼 없음, 항상 표시) ===== */
   .name-label {
@@ -190,19 +191,16 @@
         <div class="fd-arrow">→</div>
         <div class="fd-box" style="border-color:#3b82f6">Extraction Plant</div>
 
-        <div></div><div></div><div></div>
-        <div class="fd-longarrow-branches">
-          <div class="fd-arrow up">↑</div>
-          <div class="fd-arrow up">↑</div>
+        <div class="fd-branch-group" style="grid-column: 4; grid-row: 2;">
+          <div class="fd-branch-col">
+            <div class="fd-arrow up">↑</div>
+            <div class="fd-box sub" style="border-color:#3b82f6">TEP</div>
+          </div>
+          <div class="fd-branch-col">
+            <div class="fd-arrow up">↑</div>
+            <div class="fd-box sub" style="border-color:#3b82f6">KSO IHE</div>
+          </div>
         </div>
-        <div></div><div></div><div></div><div></div><div></div>
-
-        <div></div><div></div><div></div>
-        <div class="fd-longarrow-branches">
-          <div class="fd-box sub" style="border-color:#3b82f6">TEP</div>
-          <div class="fd-box sub" style="border-color:#3b82f6">KSO IHE</div>
-        </div>
-        <div></div><div></div><div></div><div></div><div></div>
       </div>
     </div>
   </div>
