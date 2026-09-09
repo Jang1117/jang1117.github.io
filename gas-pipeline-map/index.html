@@ -124,6 +124,9 @@
     content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -5px;
     border: 5px solid transparent; border-top-color: #ffffff;
   }
+  /* Feed Gas Flow 다이어그램에 나오는 지점은 노란색으로 강조 */
+  .name-label.flow-highlight { background: #facc15; border-color: #ca8a04; }
+  .name-label.flow-highlight::after { border-top-color: #facc15; }
 
   /* ===== Custom marker pins (AdvancedMarkerElement content) ===== */
   .map-pin {
@@ -334,6 +337,13 @@
   function findStation(name) {
     return STATIONS.find(s => s.name === name);
   }
+
+  // Feed Gas Flow 팝업(20"/28" 그룹 다이어그램)에 나오는 지점들 - 이 지점들만 마커 이름표를
+  // 노란색으로 표시해서 다이어그램과 지도를 서로 대조하기 쉽게 함
+  const FLOW_DIAGRAM_STATIONS = new Set([
+    'Musi Timur', 'Rambutan Medco', 'Betung', 'SKG 10', 'Extraction Plant', 'Teras Medco',
+    'Musi Barat', 'Benuang SKG 18', 'TEP', 'KSO IHE'
+  ]);
 
   // 라인/라벨 표시 토글에 쓰이는 그룹 키: 'main'(20인치 등 기본망) / '28' / 'nlg' 등 seg.group으로 명시 가능
   function computeSegmentGroup(seg) {
@@ -621,7 +631,7 @@
 
       // 이름 라벨은 항상 마커 위에 떠 있음 (줌 레벨과 무관). 라벨 클릭도 마커 클릭과 동일하게 동작
       const nameEl = document.createElement('div');
-      nameEl.className = 'name-label';
+      nameEl.className = 'name-label' + (FLOW_DIAGRAM_STATIONS.has(s.name) ? ' flow-highlight' : '');
       nameEl.textContent = s.name;
       const nameLabel = new google.maps.marker.AdvancedMarkerElement({
         position: { lat: s.lat, lng: s.lng },
