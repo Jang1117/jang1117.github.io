@@ -350,6 +350,7 @@
   </div>
 </div>
 
+<script src="config.js"></script>
 <script>
   const STATIONS = [
     { name: 'TEP',               lat: -3.132468835999215, lng: 103.0830930847289 },
@@ -955,6 +956,21 @@
   // 페이지 로드 시 팝업이 기본으로 켜져 있으므로(모든 라인 토글 기본 on), 처음부터 폭에 맞게 축소
   requestAnimationFrame(layoutFlowDiagram);
 </script>
-<script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBKZ64N6aTmQLaU312nCqXeyrNa-lol2IQ&libraries=geometry,marker&callback=initMap"></script>
+<script>
+  // API 키는 소스에 하드코딩하지 않고 config.js(로컬은 수동 생성, 배포는 CI가 Secrets로 생성)에서 읽어옴.
+  // Maps JS API 특성상 브라우저에는 결국 노출되므로, 실제 방어는 Google Cloud Console의
+  // HTTP 리퍼러 제한(배포 도메인만 허용)으로 함.
+  (function loadGoogleMaps() {
+    const key = window.GOOGLE_MAPS_API_KEY;
+    if (!key) {
+      console.error('GOOGLE_MAPS_API_KEY가 없습니다. config.example.js를 config.js로 복사하고 키를 채워주세요.');
+      return;
+    }
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=geometry,marker&callback=initMap`;
+    document.head.appendChild(script);
+  })();
+</script>
 </body>
 </html>
