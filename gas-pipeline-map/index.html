@@ -345,6 +345,13 @@
       <input type="number" id="radiusInput" class="radius-input" value="28" min="1" step="1"
              oninput="updateMusiBaratRadius(this.value)">
     </div>
+    <div class="toggle-row">
+      <span>Mushola 반경 (152m)</span>
+      <label class="switch">
+        <input type="checkbox" id="musholaRadiusToggle" checked onchange="toggleMusholaRadius(this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
     <div id="stationList"></div>
     <div id="summary"></div>
   </div>
@@ -517,12 +524,19 @@
   let labelsOn = false; // 구글 지도 기본 라벨(지명/도로명) 표시 여부
   const DEFAULT_RADIUS_KM = 28;
   let musiBaratCircle = null;
+  const MUSHOLA_CENTER = { lat: -3.3535858652280557, lng: 103.37529225497948 };
+  const MUSHOLA_RADIUS_METERS = 152;
+  let musholaCircle = null;
 
   // 사이드바 입력으로 Musi Barat 반경 원의 반지름(km)을 조절
   function updateMusiBaratRadius(km) {
     const n = parseFloat(km);
     if (!musiBaratCircle || !isFinite(n) || n <= 0) return;
     musiBaratCircle.setRadius(n * 1000);
+  }
+
+  function toggleMusholaRadius(visible) {
+    if (musholaCircle) musholaCircle.setMap(visible ? map : null);
   }
 
   // 위성 지도에서 구글 기본 라벨을 보이게 하려면 'hybrid', 안 보이게 하려면 'satellite'
@@ -848,6 +862,19 @@
         clickable: false
       });
     }
+
+    // Mushola 중심 반경 원 (고정 반경 152m, 사이드바 스위치로 표시/숨김)
+    musholaCircle = new google.maps.Circle({
+      center: MUSHOLA_CENTER,
+      radius: MUSHOLA_RADIUS_METERS,
+      map,
+      strokeColor: '#06b6d4',
+      strokeOpacity: 0.95,
+      strokeWeight: 2,
+      fillColor: '#06b6d4',
+      fillOpacity: 0.16,
+      clickable: false
+    });
 
     // 마커 (Musi Barat은 실제 현장 사진, 나머지는 번호 배지 - AdvancedMarkerElement로 커스텀 HTML 사용)
     // 색상으로 20인치 그룹 / 28인치 라인 / 둘 다 지나가는 지점을 구분함
